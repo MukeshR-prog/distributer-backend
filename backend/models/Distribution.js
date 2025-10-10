@@ -230,6 +230,9 @@ distributionSchema.methods.getAgentPerformance = function() {
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
     };
   });
-};
+// Indexes for optimized filter performance
+distributionSchema.index({ status: 1 });
+distributionSchema.index({ 'agents.agentId': 1 });
+distributionSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Distribution', distributionSchema);

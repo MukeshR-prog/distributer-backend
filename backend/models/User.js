@@ -166,7 +166,9 @@ userSchema.statics.getAgentStats = async function() {
     };
   } catch (error) {
     throw error;
-  }
-};
+// Indexes for optimized filter performance
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ name: 1 });
+userSchema.index({ phone: 1 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -2,6 +2,7 @@ const Distribution = require('../models/Distribution');
 const User = require('../models/User');
 const Record = require('../models/Record');
 const asyncHandler = require('express-async-handler');
+const { buildFilters } = require('../utils/filterBuilder');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -125,15 +126,17 @@ const getDistributions = asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const filter = buildFilters(req.query, 'distribution');
+
     const distributions = await Distribution
-      .find({})
+      .find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate('uploadedBy', 'name email')
       .populate('agents.agentId', 'name email');
 
-    const total = await Distribution.countDocuments({});
+    const total = await Distribution.countDocuments(filter);
 
     res.json({
       success: true,

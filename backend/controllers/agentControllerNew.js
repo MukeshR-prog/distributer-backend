@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Record = require('../models/Record');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { buildFilters } = require('../utils/filterBuilder');
 
 /**
  * @desc    Get all agents
@@ -8,7 +9,8 @@ const { asyncHandler } = require('../middleware/errorHandler');
  * @access  Private (Admin)
  */
 const getAgents = asyncHandler(async (req, res) => {
-  const agents = await User.find({ role: 'agent' })
+  const filters = buildFilters(req.query, 'agent');
+  const agents = await User.find(filters)
     .select('-password')
     .sort({ createdAt: -1 });
 
