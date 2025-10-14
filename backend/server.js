@@ -22,6 +22,7 @@ const agentRoutesNew = require('./routes/agentsNew');
 const distributionRoutes = require('./routes/distributions');
 const distributionRoutesNew = require('./routes/distributionsNew');
 const dashboardRoutes = require('./routes/dashboard');
+const analyticsRoutes = require('./routes/analytics');
 
 // Initialize Express app
 const app = express();
@@ -119,6 +120,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutesNew);  // Updated to use new agent routes
 app.use('/api/distributions', distributionRoutesNew);  // Updated to use new distribution routes
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
