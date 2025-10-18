@@ -3,13 +3,9 @@ const User = require('../models/User');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 /**
- * @desc    Get agent performance analytics and reporting metrics
- * @route   GET /api/analytics/agents
- * @access  Private (Admin)
+ * @desc    Helper to aggregate and fetch agent analytics data (reusable by reports)
  */
-const getAgentAnalytics = asyncHandler(async (req, res) => {
-  const { from, to } = req.query;
-
+const fetchAgentAnalyticsDataInternal = async (from, to) => {
   // Build match filters based on date range parameters
   const matchStage = {};
   if (from || to) {
@@ -110,16 +106,30 @@ const getAgentAnalytics = asyncHandler(async (req, res) => {
     averageTasksPerAgent
   };
 
-  res.status(200).json({
-    success: true,
+  return {
     topPerformers,
     completionMetrics,
     averageCompletionRate,
     activeAgents,
     totalTasksCompleted
+  };
+};
+
+/**
+ * @desc    Get agent performance analytics and reporting metrics
+ * @route   GET /api/analytics/agents
+ * @access  Private (Admin)
+ */
+const getAgentAnalytics = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+  const analyticsData = await fetchAgentAnalyticsDataInternal(from, to);
+  res.status(200).json({
+    success: true,
+    ...analyticsData
   });
 });
 
 module.exports = {
-  getAgentAnalytics
+  getAgentAnalytics,
+  fetchAgentAnalyticsDataInternal
 };
