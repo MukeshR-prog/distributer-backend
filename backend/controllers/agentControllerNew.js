@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Record = require('../models/Record');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { buildFilters } = require('../utils/filterBuilder');
+const { logActivity } = require('../utils/activityLogger');
 
 /**
  * @desc    Get all agents
@@ -51,6 +52,19 @@ const createAgent = asyncHandler(async (req, res) => {
 
   // Remove password from response
   agent.password = undefined;
+
+  // Log activity
+  await logActivity({
+    actionType: 'AGENT_CREATED',
+    entityType: 'User',
+    entityId: agent._id,
+    userId: req.user._id,
+    metadata: {
+      agentId: agent._id,
+      agentName: agent.name,
+      agentEmail: agent.email
+    }
+  }, req.app.get('io'));
 
   res.status(201).json({
     success: true,
@@ -166,6 +180,19 @@ const deleteAgent = asyncHandler(async (req, res) => {
   }
 
   await User.findByIdAndDelete(req.params.id);
+
+  // Log activity
+  await logActivity({
+    actionType: 'AGENT_DELETED',
+    entityType: 'User',
+    entityId: agent._id,
+    userId: req.user._id,
+    metadata: {
+      agentId: agent._id,
+      agentName: agent.name,
+      agentEmail: agent.email
+    }
+  }, req.app.get('io'));
 
   res.status(200).json({
     success: true,

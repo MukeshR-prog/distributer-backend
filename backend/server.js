@@ -24,6 +24,7 @@ const distributionRoutesNew = require('./routes/distributionsNew');
 const dashboardRoutes = require('./routes/dashboard');
 const analyticsRoutes = require('./routes/analytics');
 const reportRoutes = require('./routes/reports');
+const activityRoutes = require('./routes/activity');
 
 // Initialize Express app
 const app = express();
@@ -123,6 +124,7 @@ app.use('/api/distributions', distributionRoutesNew);  // Updated to use new dis
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/activity', activityRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {

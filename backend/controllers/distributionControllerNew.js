@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Record = require('../models/Record');
 const asyncHandler = require('express-async-handler');
 const { buildFilters } = require('../utils/filterBuilder');
+const { logActivity } = require('../utils/activityLogger');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -84,6 +85,20 @@ const distribution = new Distribution({
 });
 
     await distribution.save();
+
+    // Log activity
+    await logActivity({
+      actionType: 'DISTRIBUTION_UPLOADED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      userId: req.user._id,
+      metadata: {
+        distributionId: distribution._id,
+        fileName: distribution.fileName,
+        totalRecords: distribution.totalRecords,
+        strategy: distribution.strategy
+      }
+    }, req.app.get('io'));
 
     // Clean up uploaded file
     if (fs.existsSync(filePath)) {
@@ -273,6 +288,22 @@ const updateRecordStatus = asyncHandler(async (req, res) => {
     agentData.records[recordIdx].updatedAt = new Date();
 
     await distribution.save();
+
+    // Log activity
+    await logActivity({
+      actionType: 'STATUS_UPDATED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      userId: req.user._id,
+      metadata: {
+        distributionId: distribution._id,
+        recordId: agentData.records[recordIdx]._id,
+        firstName: agentData.records[recordIdx].firstName,
+        phone: agentData.records[recordIdx].phone,
+        status: agentData.records[recordIdx].status,
+        agentName: req.user.name
+      }
+    }, req.app.get('io'));
 
     res.json({
       success: true,

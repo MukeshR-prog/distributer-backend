@@ -15,6 +15,7 @@ const { protect, restrictTo } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/errorHandler');
 const { uploadLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const { uploadMiddleware } = require('../utils/upload');
+const { logActivity } = require('../utils/activityLogger');
 
 const router = express.Router();
 
@@ -133,6 +134,31 @@ router.route('/records/:recordId/status')
       console.log('Saving distribution...');
       await distribution.save();
       console.log('Distribution saved successfully');
+      
+      // Find the record details for metadata logging
+      let updatedRecord = {};
+      distribution.agents.forEach(agent => {
+        if (agent.agentId.toString() === req.user._id.toString()) {
+          const match = agent.records.find(r => r._id.toString() === recordId);
+          if (match) updatedRecord = match;
+        }
+      });
+
+      // Log activity
+      await logActivity({
+        actionType: 'STATUS_UPDATED',
+        entityType: 'Distribution',
+        entityId: distribution._id,
+        userId: req.user._id,
+        metadata: {
+          distributionId: distribution._id,
+          recordId: recordId,
+          firstName: updatedRecord.firstName || "",
+          phone: updatedRecord.phone || "",
+          status: status,
+          agentName: req.user.name
+        }
+      }, req.app.get('io'));
       
       res.json({
         success: true,
