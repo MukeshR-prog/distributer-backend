@@ -16,6 +16,7 @@ const { handleValidationErrors } = require('../middleware/errorHandler');
 const { uploadLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const { uploadMiddleware } = require('../utils/upload');
 const { logActivity } = require('../utils/activityLogger');
+const { logAudit } = require('../utils/auditLogger');
 
 const router = express.Router();
 
@@ -105,6 +106,8 @@ router.route('/records/:recordId/status')
           message: 'Record not found or not assigned to you'
         });
       }
+
+      const previousState = distribution.toObject ? distribution.toObject() : JSON.parse(JSON.stringify(distribution));
       
       // Find and update the specific record
       let recordFound = false;
@@ -159,6 +162,18 @@ router.route('/records/:recordId/status')
           agentName: req.user.name
         }
       }, req.app.get('io'));
+
+      // Log audit
+      await logAudit({
+        actionType: 'STATUS_UPDATED',
+        entityType: 'Distribution',
+        entityId: distribution._id,
+        previousState,
+        newState: distribution.toObject ? distribution.toObject() : distribution,
+        userId: req.user._id,
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        userAgent: req.headers['user-agent']
+      });
       
       res.json({
         success: true,

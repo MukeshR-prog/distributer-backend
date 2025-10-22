@@ -3,6 +3,7 @@ const Record = require('../models/Record');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { buildFilters } = require('../utils/filterBuilder');
 const { logActivity } = require('../utils/activityLogger');
+const { logAudit } = require('../utils/auditLogger');
 
 /**
  * @desc    Get all agents
@@ -65,6 +66,18 @@ const createAgent = asyncHandler(async (req, res) => {
       agentEmail: agent.email
     }
   }, req.app.get('io'));
+
+  // Log audit
+  await logAudit({
+    actionType: 'AGENT_CREATED',
+    entityType: 'User',
+    entityId: agent._id,
+    previousState: null,
+    newState: agent.toObject ? agent.toObject() : agent,
+    userId: req.user._id,
+    ipAddress: req.ip || req.headers['x-forwarded-for'],
+    userAgent: req.headers['user-agent']
+  });
 
   res.status(201).json({
     success: true,
@@ -138,6 +151,9 @@ const updateAgent = asyncHandler(async (req, res) => {
     }
   }
 
+  const previousState = agent.toObject ? agent.toObject() : agent;
+  previousState.password = undefined;
+
   const updatedAgent = await User.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -146,6 +162,18 @@ const updateAgent = asyncHandler(async (req, res) => {
       runValidators: true
     }
   ).select('-password');
+
+  // Log audit
+  await logAudit({
+    actionType: 'AGENT_UPDATED',
+    entityType: 'User',
+    entityId: updatedAgent._id,
+    previousState,
+    newState: updatedAgent.toObject ? updatedAgent.toObject() : updatedAgent,
+    userId: req.user._id,
+    ipAddress: req.ip || req.headers['x-forwarded-for'],
+    userAgent: req.headers['user-agent']
+  });
 
   res.status(200).json({
     success: true,
@@ -179,6 +207,9 @@ const deleteAgent = asyncHandler(async (req, res) => {
     });
   }
 
+  const previousState = agent.toObject ? agent.toObject() : agent;
+  previousState.password = undefined;
+
   await User.findByIdAndDelete(req.params.id);
 
   // Log activity
@@ -193,6 +224,18 @@ const deleteAgent = asyncHandler(async (req, res) => {
       agentEmail: agent.email
     }
   }, req.app.get('io'));
+
+  // Log audit
+  await logAudit({
+    actionType: 'AGENT_DELETED',
+    entityType: 'User',
+    entityId: agent._id,
+    previousState,
+    newState: null,
+    userId: req.user._id,
+    ipAddress: req.ip || req.headers['x-forwarded-for'],
+    userAgent: req.headers['user-agent']
+  });
 
   res.status(200).json({
     success: true,

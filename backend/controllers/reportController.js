@@ -2,6 +2,7 @@ const Report = require('../models/Report');
 const { generateReportData } = require('../utils/reportGenerator');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { logActivity } = require('../utils/activityLogger');
+const { logAudit } = require('../utils/auditLogger');
 
 /**
  * @desc    Get all reports history (metadata only or full depending on list context)
@@ -62,6 +63,18 @@ const generateReportAction = asyncHandler(async (req, res) => {
       dateRange: newReport.dateRange
     }
   }, req.app.get('io'));
+
+  // Log audit
+  await logAudit({
+    actionType: 'REPORT_GENERATED',
+    entityType: 'Report',
+    entityId: newReport._id,
+    previousState: null,
+    newState: newReport.toObject ? newReport.toObject() : newReport,
+    userId: req.user._id,
+    ipAddress: req.ip || req.headers['x-forwarded-for'],
+    userAgent: req.headers['user-agent']
+  });
 
   // Populate generatedBy name & email for the response
   const populatedReport = await Report.findById(newReport._id).populate('generatedBy', 'name email');

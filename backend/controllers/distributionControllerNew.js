@@ -4,6 +4,7 @@ const Record = require('../models/Record');
 const asyncHandler = require('express-async-handler');
 const { buildFilters } = require('../utils/filterBuilder');
 const { logActivity } = require('../utils/activityLogger');
+const { logAudit } = require('../utils/auditLogger');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -99,6 +100,18 @@ const distribution = new Distribution({
         strategy: distribution.strategy
       }
     }, req.app.get('io'));
+
+    // Log audit
+    await logAudit({
+      actionType: 'DISTRIBUTION_UPLOADED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      previousState: null,
+      newState: distribution.toObject ? distribution.toObject() : distribution,
+      userId: req.user._id,
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent']
+    });
 
     // Clean up uploaded file
     if (fs.existsSync(filePath)) {
@@ -280,6 +293,8 @@ const updateRecordStatus = asyncHandler(async (req, res) => {
     });
   }
 
+  const previousState = distribution.toObject ? distribution.toObject() : JSON.parse(JSON.stringify(distribution));
+
   // Update record
   const recordIdx = parseInt(recordIndex);
   if (recordIdx >= 0 && recordIdx < agentData.records.length) {
@@ -304,6 +319,18 @@ const updateRecordStatus = asyncHandler(async (req, res) => {
         agentName: req.user.name
       }
     }, req.app.get('io'));
+
+    // Log audit
+    await logAudit({
+      actionType: 'STATUS_UPDATED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      previousState,
+      newState: distribution.toObject ? distribution.toObject() : distribution,
+      userId: req.user._id,
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent']
+    });
 
     res.json({
       success: true,
