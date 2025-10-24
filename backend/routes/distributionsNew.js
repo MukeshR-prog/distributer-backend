@@ -9,7 +9,8 @@ const {
   updateRecordStatus,
   getDistributionStats,
   exportDistribution,
-  deleteDistribution
+  deleteDistribution,
+  updateRecordDetailsAdmin
 } = require('../controllers/distributionControllerNew');
 const { protect, restrictTo } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/errorHandler');
@@ -17,6 +18,7 @@ const { uploadLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const { uploadMiddleware } = require('../utils/upload');
 const { logActivity } = require('../utils/activityLogger');
 const { logAudit } = require('../utils/auditLogger');
+const { calculateSLA } = require('../utils/slaCalculator');
 
 const router = express.Router();
 
@@ -63,6 +65,9 @@ router.route('/:id')
 
 router.route('/:id/records/:recordIndex')
   .put(restrictTo('agent'), updateRecordStatus);
+
+router.route('/:id/records/:recordId/admin')
+  .put(restrictTo('admin'), updateRecordDetailsAdmin);
 
 router.route('/:id/export')
   .get(exportDistribution);
@@ -119,6 +124,8 @@ router.route('/records/:recordId/status')
             if (record._id.toString() === recordId) {
               console.log('Found record! Updating status from', record.status, 'to', status);
               record.status = status;
+              // Recalculate SLA status
+              record.slaStatus = calculateSLA(record);
               record.updatedAt = new Date();
               recordFound = true;
             }

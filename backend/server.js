@@ -140,7 +140,7 @@ app.get('/api', (req, res) => {
       distributions: '/api/distributions',
       dashboard: '/api/dashboard'
     },
-    documentation: 'https://github.com/your-repo/api-docs'
+    documentation: 'https://github.com/MukeshR-prog/distributer-backend'
   });
 });
 

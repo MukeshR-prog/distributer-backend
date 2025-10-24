@@ -5,6 +5,7 @@ const asyncHandler = require('express-async-handler');
 const { buildFilters } = require('../utils/filterBuilder');
 const { logActivity } = require('../utils/activityLogger');
 const { logAudit } = require('../utils/auditLogger');
+const { calculateSLA } = require('../utils/slaCalculator');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
@@ -300,6 +301,8 @@ const updateRecordStatus = asyncHandler(async (req, res) => {
   if (recordIdx >= 0 && recordIdx < agentData.records.length) {
     agentData.records[recordIdx].status = status;
     if (notes) agentData.records[recordIdx].notes = notes;
+    // Explicitly recalculate SLA
+    agentData.records[recordIdx].slaStatus = calculateSLA(agentData.records[recordIdx]);
     agentData.records[recordIdx].updatedAt = new Date();
 
     await distribution.save();
@@ -463,14 +466,24 @@ const distributeRecords = (records, agents) => {
       agentId: agent._id,
       agentName: agent.name,
       agentEmail: agent.email,
-      records: agentRecords.map(record => ({
-        firstName: record.FirstName,
-        phone: record.Phone,
-        notes: record.Notes,
-        status: 'pending',
-        assignedAt: new Date(),
-        updatedAt: new Date()
-      }))
+      records: agentRecords.map(record => {
+        const priority = (record.Priority || record.priority || 'medium').toLowerCase();
+        const rawDueDate = record.DueDate || record.dueDate || null;
+        const dueDate = rawDueDate ? new Date(rawDueDate) : null;
+        const slaStatus = calculateSLA({ status: 'pending', dueDate });
+        
+        return {
+          firstName: record.FirstName,
+          phone: record.Phone,
+          notes: record.Notes,
+          status: 'pending',
+          priority: ['low', 'medium', 'high', 'critical'].includes(priority) ? priority : 'medium',
+          dueDate,
+          slaStatus,
+          assignedAt: new Date(),
+          updatedAt: new Date()
+        };
+      })
     });
     
     recordIndex += recordsCount;
@@ -487,5 +500,133 @@ module.exports = {
   updateRecordStatus,
   getDistributionStats,
   exportDistribution,
-  deleteDistribution
+  deleteDistribution,
+  updateRecordDetailsAdmin: asyncHandler(async (req, res) => {
+    const { priority, dueDate } = req.body;
+    const { id: distributionId, recordId } = req.params;
+
+    const distribution = await Distribution.findById(distributionId);
+
+    if (!distribution) {
+      return res.status(404).json({
+        success: false,
+        message: 'Distribution not found'
+      });
+    }
+
+    // Find record in the distribution
+    let recordToUpdate = null;
+    let targetAgent = null;
+
+    for (const agent of distribution.agents) {
+      const match = agent.records.find(r => r._id.toString() === recordId.toString());
+      if (match) {
+        recordToUpdate = match;
+        targetAgent = agent;
+        break;
+      }
+    }
+
+    if (!recordToUpdate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Record not found in this distribution'
+      });
+    }
+
+    const previousState = distribution.toObject ? distribution.toObject() : JSON.parse(JSON.stringify(distribution));
+
+    let priorityChanged = false;
+    let dueDateChanged = false;
+    const oldPriority = recordToUpdate.priority;
+    const oldDueDate = recordToUpdate.dueDate;
+
+    if (priority && priority !== recordToUpdate.priority) {
+      if (['low', 'medium', 'high', 'critical'].includes(priority.toLowerCase())) {
+        recordToUpdate.priority = priority.toLowerCase();
+        priorityChanged = true;
+      }
+    }
+
+    if (dueDate !== undefined) {
+      const newDueDate = dueDate ? new Date(dueDate) : null;
+      const oldTime = oldDueDate ? new Date(oldDueDate).getTime() : null;
+      const newTime = newDueDate ? newDueDate.getTime() : null;
+      
+      if (oldTime !== newTime) {
+        recordToUpdate.dueDate = newDueDate;
+        dueDateChanged = true;
+      }
+    }
+
+    if (priorityChanged || dueDateChanged) {
+      recordToUpdate.updatedAt = new Date();
+      // Recalculate SLA
+      recordToUpdate.slaStatus = calculateSLA(recordToUpdate);
+
+      await distribution.save();
+
+      // Log Activity for Priority Change
+      if (priorityChanged) {
+        await logActivity({
+          actionType: 'PRIORITY_CHANGED',
+          entityType: 'Distribution',
+          entityId: distribution._id,
+          userId: req.user._id,
+          metadata: {
+            distributionId: distribution._id,
+            recordId: recordToUpdate._id,
+            firstName: recordToUpdate.firstName,
+            phone: recordToUpdate.phone,
+            oldPriority,
+            newPriority: recordToUpdate.priority,
+            agentName: targetAgent.agentName
+          }
+        }, req.app.get('io'));
+      }
+
+      // Log Activity for Due Date Change
+      if (dueDateChanged) {
+        await logActivity({
+          actionType: 'DUE_DATE_CHANGED',
+          entityType: 'Distribution',
+          entityId: distribution._id,
+          userId: req.user._id,
+          metadata: {
+            distributionId: distribution._id,
+            recordId: recordToUpdate._id,
+            firstName: recordToUpdate.firstName,
+            phone: recordToUpdate.phone,
+            oldDueDate,
+            newDueDate: recordToUpdate.dueDate,
+            agentName: targetAgent.agentName
+          }
+        }, req.app.get('io'));
+      }
+
+      // Log Audit
+      await logAudit({
+        actionType: 'RECORD_UPDATED',
+        entityType: 'Distribution',
+        entityId: distribution._id,
+        previousState,
+        newState: distribution.toObject ? distribution.toObject() : distribution,
+        userId: req.user._id,
+        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        userAgent: req.headers['user-agent']
+      });
+
+      return res.json({
+        success: true,
+        message: 'Record updated successfully',
+        record: recordToUpdate
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'No changes detected',
+      record: recordToUpdate
+    });
+  })
 };

@@ -79,6 +79,20 @@ const distributionSchema = new mongoose.Schema({
         enum: ['pending', 'in-progress', 'completed', 'failed'],
         default: 'pending'
       },
+      priority: {
+        type: String,
+        enum: ['low', 'medium', 'high', 'critical'],
+        default: 'medium'
+      },
+      dueDate: {
+        type: Date,
+        default: null
+      },
+      slaStatus: {
+        type: String,
+        enum: ['on_track', 'approaching_deadline', 'overdue'],
+        default: 'on_track'
+      },
       assignedAt: {
         type: Date,
         default: Date.now
@@ -160,6 +174,14 @@ distributionSchema.pre('save', function(next) {
   if (this.agents && this.agents.length > 0) {
     this.summary.totalAgentsAssigned = this.agents.length;
     this.summary.averageRecordsPerAgent = Math.round(this.totalRecords / this.agents.length);
+
+    // Recalculate SLA statuses
+    const { calculateSLA } = require('../utils/slaCalculator');
+    this.agents.forEach(agent => {
+      agent.records.forEach(record => {
+        record.slaStatus = calculateSLA(record);
+      });
+    });
   }
   next();
 });
@@ -230,6 +252,7 @@ distributionSchema.methods.getAgentPerformance = function() {
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
     };
   });
+};
 // Indexes for optimized filter performance
 distributionSchema.index({ status: 1 });
 distributionSchema.index({ 'agents.agentId': 1 });
