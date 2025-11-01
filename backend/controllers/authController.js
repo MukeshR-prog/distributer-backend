@@ -51,7 +51,7 @@ const register = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   // Find user with password field included
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
@@ -86,7 +86,7 @@ const login = asyncHandler(async (req, res) => {
   // Log the login
   console.log(`🔐 User login: ${user.email} (${user.role})`);
 
-  res.json(generateAuthResponse(user, 'Login successful'));
+  res.json(generateAuthResponse(user, 'Login successful', !!rememberMe));
 });
 
 /**

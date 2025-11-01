@@ -93,6 +93,10 @@ const distributionSchema = new mongoose.Schema({
         enum: ['on_track', 'approaching_deadline', 'overdue'],
         default: 'on_track'
       },
+      escalationLevel: {
+        type: String,
+        default: null
+      },
       assignedAt: {
         type: Date,
         default: Date.now
@@ -175,11 +179,17 @@ distributionSchema.pre('save', function(next) {
     this.summary.totalAgentsAssigned = this.agents.length;
     this.summary.averageRecordsPerAgent = Math.round(this.totalRecords / this.agents.length);
 
-    // Recalculate SLA statuses
-    const { calculateSLA } = require('../utils/slaCalculator');
+    // Recalculate SLA statuses and escalation levels
+    const { calculateSLA, getEscalationLevel } = require('../utils/slaCalculator');
     this.agents.forEach(agent => {
       agent.records.forEach(record => {
         record.slaStatus = calculateSLA(record);
+        record.escalationLevel = getEscalationLevel(record);
+        if (record.status === 'completed' && !record.completedAt) {
+          record.completedAt = new Date();
+        } else if (record.status !== 'completed') {
+          record.completedAt = undefined;
+        }
       });
     });
   }

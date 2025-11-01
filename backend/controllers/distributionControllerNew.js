@@ -205,9 +205,19 @@ const getDistribution = asyncHandler(async (req, res) => {
     });
   }
 
+  const distributionObj = distribution.toObject ? distribution.toObject() : JSON.parse(JSON.stringify(distribution));
+  const { calculateSLA, getEscalationLevel } = require('../utils/slaCalculator');
+  
+  distributionObj.agents.forEach(agent => {
+    agent.records.forEach(record => {
+      record.slaStatus = calculateSLA(record);
+      record.escalationLevel = getEscalationLevel(record);
+    });
+  });
+
   res.json({
     success: true,
-    data: { distribution }
+    data: { distribution: distributionObj }
   });
 });
 
@@ -225,6 +235,7 @@ const getMyRecords = asyncHandler(async (req, res) => {
 
     // Collect all records assigned to this agent
     let allRecords = [];
+    const { calculateSLA, getEscalationLevel } = require('../utils/slaCalculator');
     
     distributions.forEach(distribution => {
       const agentData = distribution.agents.find(
@@ -233,16 +244,89 @@ const getMyRecords = asyncHandler(async (req, res) => {
       
       if (agentData && agentData.records) {
         // Add distribution info to each record
-        const recordsWithDistribution = agentData.records.map(record => ({
-          ...record.toObject(),
-          distributionId: distribution._id,
-          distributionName: distribution.fileName,
-          uploadedBy: distribution.uploadedBy
-        }));
+        const recordsWithDistribution = agentData.records.map(record => {
+          const recObj = record.toObject ? record.toObject() : JSON.parse(JSON.stringify(record));
+          return {
+            ...recObj,
+            distributionId: distribution._id,
+            distributionName: distribution.fileName,
+            uploadedBy: distribution.uploadedBy,
+            slaStatus: calculateSLA(record),
+            escalationLevel: getEscalationLevel(record)
+          };
+        });
         
         allRecords = allRecords.concat(recordsWithDistribution);
       }
     });
+
+    // Implement backend sorting priority
+    allRecords.sort((a, b) => {
+      const isActiveA = (a.status === 'pending' || a.status === 'in-progress') ? 1 : 0;
+      const isActiveB = (b.status === 'pending' || b.status === 'in-progress') ? 1 : 0;
+      if (isActiveA !== isActiveB) {
+        return isActiveB - isActiveA; // active tasks first
+      }
+
+      const slaA = calculateSLA(a);
+      const slaB = calculateSLA(b);
+
+      const isCriticalOverdueA = (a.priority === 'critical' && slaA === 'overdue') ? 1 : 0;
+      const isCriticalOverdueB = (b.priority === 'critical' && slaB === 'overdue') ? 1 : 0;
+
+      // 1. Critical + Overdue
+      if (isCriticalOverdueA !== isCriticalOverdueB) {
+        return isCriticalOverdueB - isCriticalOverdueA;
+      }
+
+      // 2. Priority sorting
+      const priorityWeights = { critical: 4, high: 3, medium: 2, low: 1 };
+      const weightA = priorityWeights[a.priority?.toLowerCase()] || 0;
+      const weightB = priorityWeights[b.priority?.toLowerCase()] || 0;
+
+      if (weightA !== weightB) {
+        return weightB - weightA;
+      }
+
+      // 3. Secondary sort: Nearest Due Date
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+
+      return 0;
+    });
+
+    // Calculate SLA stats
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const overdueCount = allRecords.filter(r => {
+      const currentSla = calculateSLA(r);
+      return r.status !== 'completed' && r.status !== 'cancelled' && currentSla === 'overdue';
+    }).length;
+
+    const approachingDeadlineCount = allRecords.filter(r => {
+      const currentSla = calculateSLA(r);
+      return r.status !== 'completed' && r.status !== 'cancelled' && currentSla === 'approaching_deadline';
+    }).length;
+
+    const completedToday = allRecords.filter(r => {
+      return r.status === 'completed' && r.completedAt && new Date(r.completedAt) >= startOfToday;
+    }).length;
+
+    const criticalTasks = allRecords.filter(r => {
+      return r.status !== 'completed' && r.status !== 'cancelled' && r.priority === 'critical';
+    }).length;
+
+    const completedCount = allRecords.filter(r => r.status === 'completed').length;
+    const averageCompletionRate = allRecords.length > 0 ? Math.round((completedCount / allRecords.length) * 100) : 0;
+
+    const onTrackTasks = allRecords.filter(r => {
+      return r.status === 'completed' || calculateSLA(r) !== 'overdue';
+    }).length;
+    const slaCompliance = allRecords.length > 0 ? Math.round((onTrackTasks / allRecords.length) * 100) : 100;
 
     res.json({
       success: true,
@@ -252,7 +336,15 @@ const getMyRecords = asyncHandler(async (req, res) => {
         pending: allRecords.filter(r => r.status === 'pending').length,
         inProgress: allRecords.filter(r => r.status === 'in-progress').length,
         completed: allRecords.filter(r => r.status === 'completed').length,
-        failed: allRecords.filter(r => r.status === 'failed').length
+        failed: allRecords.filter(r => r.status === 'failed').length,
+        slaStats: {
+          overdueCount,
+          approachingDeadlineCount,
+          completedToday,
+          criticalTasks,
+          averageCompletionRate,
+          slaCompliance
+        }
       }
     });
   } catch (error) {

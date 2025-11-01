@@ -50,4 +50,39 @@ const calculateSLA = (record) => {
   return slaStatus;
 };
 
-module.exports = { calculateSLA };
+/**
+ * Calculates the escalation level for a record if it is overdue.
+ * @param {Object} record - The record object containing dueDate and status.
+ * @returns {String|null} The escalation level ('LEVEL_1', 'LEVEL_2', 'LEVEL_3') or null
+ */
+const getEscalationLevel = (record) => {
+  if (record.status === 'completed' || record.status === 'cancelled') {
+    return null;
+  }
+
+  if (!record.dueDate) {
+    return null;
+  }
+
+  const now = new Date();
+  const dueDate = new Date(record.dueDate);
+  const timeOverdue = now.getTime() - dueDate.getTime();
+
+  if (timeOverdue <= 0) {
+    return null;
+  }
+
+  const hours = timeOverdue / (1000 * 60 * 60);
+
+  if (hours > 7 * 24) { // > 7 days
+    return 'LEVEL_3';
+  } else if (hours > 72) { // > 72 hours
+    return 'LEVEL_2';
+  } else if (hours > 24) { // > 24 hours
+    return 'LEVEL_1';
+  }
+
+  return null;
+};
+
+module.exports = { calculateSLA, getEscalationLevel };

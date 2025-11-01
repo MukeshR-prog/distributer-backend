@@ -3,9 +3,10 @@ const jwt = require('jsonwebtoken');
 /**
  * Generate JWT token
  */
-const generateToken = (id) => {
+const generateToken = (id, rememberMe = false) => {
+  const expiresIn = rememberMe ? '30d' : '24h';
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    expiresIn
   });
 };
 
@@ -19,8 +20,8 @@ const verifyToken = (token) => {
 /**
  * Generate response with user data and token
  */
-const generateAuthResponse = (user, message = 'Success') => {
-  const token = generateToken(user._id);
+const generateAuthResponse = (user, message = 'Success', rememberMe = false) => {
+  const token = generateToken(user._id, rememberMe);
   
   return {
     success: true,

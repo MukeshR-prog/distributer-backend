@@ -22,6 +22,59 @@ const { calculateSLA } = require('../utils/slaCalculator');
 
 const router = express.Router();
 
+// Public statistics route for landing page
+router.route('/public-stats')
+  .get(async (req, res) => {
+    try {
+      const User = require('../models/User');
+      const Report = require('../models/Report');
+      
+      const activeAgents = await User.countDocuments({ role: 'agent', isActive: true });
+      const reportsCount = await Report.countDocuments();
+      
+      const totalRecordsResult = await Distribution.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalRecords' } } }
+      ]);
+      const tasksManaged = totalRecordsResult[0]?.total || 0;
+      
+      // Calculate overall SLA compliance
+      const distributions = await Distribution.find({});
+      let totalTasks = 0;
+      let onTrackTasks = 0;
+      
+      const { calculateSLA } = require('../utils/slaCalculator');
+      
+      distributions.forEach(dist => {
+        dist.agents?.forEach(agent => {
+          agent.records?.forEach(record => {
+            totalTasks++;
+            if (record.status === 'completed' || calculateSLA(record) !== 'overdue') {
+              onTrackTasks++;
+            }
+          });
+        });
+      });
+      
+      const slaCompliance = totalTasks > 0 ? Math.round((onTrackTasks / totalTasks) * 100) : 100;
+      
+      res.json({
+        success: true,
+        data: {
+          activeAgents,
+          tasksManaged,
+          reportsGenerated: reportsCount,
+          slaCompliance
+        }
+      });
+    } catch (error) {
+      console.error('Error in public-stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching public statistics'
+      });
+    }
+  });
+
 // Apply authentication to all routes
 router.use(protect);
 

@@ -80,6 +80,48 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
       taskCounts[item._id] = item.count;
     });
 
+    // Calculate agent's task details for SLA and Escalations
+    const allAgentRecords = await Distribution.aggregate([
+      { $match: { 'agents.agentId': req.user._id } },
+      { $unwind: '$agents' },
+      { $match: { 'agents.agentId': req.user._id } },
+      { $unwind: '$agents.records' },
+      {
+        $project: {
+          status: '$agents.records.status',
+          priority: '$agents.records.priority',
+          dueDate: '$agents.records.dueDate',
+          slaStatus: '$agents.records.slaStatus',
+          completedAt: '$agents.records.completedAt'
+        }
+      }
+    ]);
+
+    const { calculateSLA } = require('../utils/slaCalculator');
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const overdueCount = allAgentRecords.filter(r => {
+      const currentSla = calculateSLA(r);
+      return r.status !== 'completed' && r.status !== 'cancelled' && currentSla === 'overdue';
+    }).length;
+
+    const approachingDeadlineCount = allAgentRecords.filter(r => {
+      const currentSla = calculateSLA(r);
+      return r.status !== 'completed' && r.status !== 'cancelled' && currentSla === 'approaching_deadline';
+    }).length;
+
+    const completedToday = allAgentRecords.filter(r => {
+      return r.status === 'completed' && r.completedAt && new Date(r.completedAt) >= startOfToday;
+    }).length;
+
+    const criticalTasks = allAgentRecords.filter(r => {
+      return r.status !== 'completed' && r.status !== 'cancelled' && r.priority === 'critical';
+    }).length;
+
+    const completedCount = allAgentRecords.filter(r => r.status === 'completed').length;
+    const averageCompletionRate = allAgentRecords.length > 0 ? Math.round((completedCount / allAgentRecords.length) * 100) : 0;
+
     res.json({
       success: true,
       data: {
@@ -94,7 +136,14 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
         },
         taskSummary: taskCounts,
         recentDistributions: myDistributions,
-        totalAssigned: Object.values(taskCounts).reduce((sum, count) => sum + count, 0)
+        totalAssigned: Object.values(taskCounts).reduce((sum, count) => sum + count, 0),
+        slaStats: {
+          overdueCount,
+          approachingDeadlineCount,
+          completedToday,
+          criticalTasks,
+          averageCompletionRate
+        }
       }
     });
   }
