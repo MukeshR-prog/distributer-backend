@@ -129,7 +129,27 @@ const getAgentAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+const getWorkloadAnalytics = asyncHandler(async (req, res) => {
+  const { calculateAgentWorkload } = require('../utils/workloadCalculator');
+  
+  const agents = await User.find({ role: 'agent', isActive: true });
+  const distributions = await Distribution.find({});
+  
+  const agentMetrics = calculateAgentWorkload(distributions, agents);
+  
+  const overloadedAgents = agentMetrics.filter(a => a.status === 'Overloaded');
+  const healthyAgents = agentMetrics.filter(a => a.status === 'Healthy');
+  
+  res.status(200).json({
+    success: true,
+    agentMetrics,
+    overloadedAgents,
+    healthyAgents
+  });
+});
+
 module.exports = {
   getAgentAnalytics,
-  fetchAgentAnalyticsDataInternal
+  fetchAgentAnalyticsDataInternal,
+  getWorkloadAnalytics
 };

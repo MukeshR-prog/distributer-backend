@@ -720,5 +720,166 @@ module.exports = {
       message: 'No changes detected',
       record: recordToUpdate
     });
+  }),
+  
+  reassignRecords: asyncHandler(async (req, res) => {
+    const { id: distributionId } = req.params;
+    const { recordIds, sourceAgentId, targetAgentId } = req.body;
+
+    if (!recordIds || !Array.isArray(recordIds) || recordIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Record IDs list must be a non-empty array'
+      });
+    }
+
+    if (!sourceAgentId || !targetAgentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both sourceAgentId and targetAgentId are required'
+      });
+    }
+
+    if (sourceAgentId.toString() === targetAgentId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source agent and target agent cannot be the same'
+      });
+    }
+
+    const distribution = await Distribution.findById(distributionId);
+
+    if (!distribution) {
+      return res.status(404).json({
+        success: false,
+        message: 'Distribution not found'
+      });
+    }
+
+    const previousState = distribution.toObject ? distribution.toObject() : JSON.parse(JSON.stringify(distribution));
+
+    const sourceAgent = distribution.agents.find(
+      a => (a.agentId?._id || a.agentId || '').toString() === sourceAgentId.toString()
+    );
+
+    if (!sourceAgent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Source agent not assigned to this distribution'
+      });
+    }
+
+    let targetAgent = distribution.agents.find(
+      a => (a.agentId?._id || a.agentId || '').toString() === targetAgentId.toString()
+    );
+
+    // If target agent is not in the distribution list, retrieve user and add them
+    if (!targetAgent) {
+      const targetUser = await User.findById(targetAgentId);
+      if (!targetUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Target agent user not found'
+        });
+      }
+      distribution.agents.push({
+        agentId: targetUser._id,
+        agentName: targetUser.name,
+        agentEmail: targetUser.email,
+        assignedCount: 0,
+        records: []
+      });
+      targetAgent = distribution.agents[distribution.agents.length - 1];
+    }
+
+    // Filter out records to move
+    const recordsToMove = [];
+    const remainingRecords = [];
+
+    sourceAgent.records.forEach(record => {
+      if (recordIds.includes(record._id.toString())) {
+        recordsToMove.push(record);
+      } else {
+        remainingRecords.push(record);
+      }
+    });
+
+    if (recordsToMove.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No matching records found for source agent'
+      });
+    }
+
+    // Perform reassignment
+    sourceAgent.records = remainingRecords;
+    sourceAgent.assignedCount = remainingRecords.length;
+
+    targetAgent.records.push(...recordsToMove);
+    targetAgent.assignedCount = targetAgent.records.length;
+
+    await distribution.save();
+
+    // Log Activities
+    await logActivity({
+      actionType: 'TASK_REASSIGNED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      userId: req.user._id,
+      metadata: {
+        distributionId: distribution._id,
+        recordCount: recordsToMove.length,
+        sourceAgentId,
+        sourceAgentName: sourceAgent.agentName,
+        targetAgentId,
+        targetAgentName: targetAgent.agentName,
+        recordIds
+      }
+    }, req.app.get('io'));
+
+    await logActivity({
+      actionType: 'WORKLOAD_BALANCED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      userId: req.user._id,
+      metadata: {
+        distributionId: distribution._id,
+        reassignedCount: recordsToMove.length,
+        sourceAgentName: sourceAgent.agentName,
+        targetAgentName: targetAgent.agentName
+      }
+    }, req.app.get('io'));
+
+    // Log Audit
+    await logAudit({
+      actionType: 'TASK_REASSIGNED',
+      entityType: 'Distribution',
+      entityId: distribution._id,
+      previousState: {
+        distribution: previousState,
+        owner: {
+          agentId: sourceAgentId,
+          agentName: sourceAgent.agentName
+        }
+      },
+      newState: {
+        distribution: distribution.toObject ? distribution.toObject() : distribution,
+        owner: {
+          agentId: targetAgentId,
+          agentName: targetAgent.agentName
+        }
+      },
+      userId: req.user._id,
+      ipAddress: req.ip || req.headers['x-forwarded-for'],
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      message: `${recordsToMove.length} records successfully reassigned`,
+      data: {
+        distribution
+      }
+    });
   })
 };

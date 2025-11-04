@@ -10,7 +10,8 @@ const {
   getDistributionStats,
   exportDistribution,
   deleteDistribution,
-  updateRecordDetailsAdmin
+  updateRecordDetailsAdmin,
+  reassignRecords
 } = require('../controllers/distributionControllerNew');
 const { protect, restrictTo } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/errorHandler');
@@ -121,6 +122,9 @@ router.route('/:id/records/:recordIndex')
 
 router.route('/:id/records/:recordId/admin')
   .put(restrictTo('admin'), updateRecordDetailsAdmin);
+
+router.route('/:id/reassign')
+  .put(restrictTo('admin'), reassignRecords);
 
 router.route('/:id/export')
   .get(exportDistribution);
