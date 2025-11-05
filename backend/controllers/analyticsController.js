@@ -1,6 +1,8 @@
 const Distribution = require('../models/Distribution');
 const User = require('../models/User');
+const PerformanceSnapshot = require('../models/PerformanceSnapshot');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { calculateAgentPerformanceAsOf, backfillSnapshots } = require('../utils/performanceCalculator');
 
 /**
  * @desc    Helper to aggregate and fetch agent analytics data (reusable by reports)
@@ -148,8 +150,81 @@ const getWorkloadAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get detailed agent performance scorecard metrics and historical snapshots
+ * @route   GET /api/analytics/performance
+ * @access  Private (Admin)
+ */
+const getPerformanceAnalytics = asyncHandler(async (req, res) => {
+  const agents = await User.find({ role: 'agent', isActive: true });
+  const distributions = await Distribution.find({});
+
+  // Trigger snapshot backfill for all active agents
+  await backfillSnapshots(distributions, agents);
+
+  const agentDetails = [];
+  let totalScore = 0;
+  let scoredAgentsCount = 0;
+
+  const scoreDistribution = {
+    'A+': 0,
+    'A': 0,
+    'B': 0,
+    'C': 0,
+    'D': 0
+  };
+
+  for (const agent of agents) {
+    const currentMetrics = calculateAgentPerformanceAsOf(agent._id, distributions, new Date());
+    
+    // Retrieve historical weekly snapshots sorted chronologically
+    const history = await PerformanceSnapshot.find({ agentId: agent._id })
+      .sort({ weekStartDate: 1 });
+
+    agentDetails.push({
+      agentId: agent._id,
+      name: agent.name,
+      email: agent.email,
+      metrics: currentMetrics,
+      history: history.map(h => ({
+        weekStartDate: h.weekStartDate,
+        metrics: h.metrics
+      }))
+    });
+
+    if (currentMetrics.totalAssigned > 0) {
+      totalScore += currentMetrics.performanceScore;
+      scoredAgentsCount++;
+    }
+
+    scoreDistribution[currentMetrics.grade] = (scoreDistribution[currentMetrics.grade] || 0) + 1;
+  }
+
+  const teamAverageScore = scoredAgentsCount > 0 ? Math.round((totalScore / scoredAgentsCount) * 10) / 10 : 0;
+
+  // Filter top performers (Score >= 80) and sort descending
+  const topPerformers = agentDetails
+    .filter(a => a.metrics.performanceScore >= 80)
+    .sort((a, b) => b.metrics.performanceScore - a.metrics.performanceScore);
+
+  // Filter improvement needed (Score < 70) and sort ascending
+  const improvementNeeded = agentDetails
+    .filter(a => a.metrics.performanceScore < 70)
+    .sort((a, b) => a.metrics.performanceScore - b.metrics.performanceScore);
+
+  res.status(200).json({
+    success: true,
+    topPerformers,
+    improvementNeeded,
+    teamAverageScore,
+    scoreDistribution,
+    agents: agentDetails
+  });
+});
+
 module.exports = {
   getAgentAnalytics,
   fetchAgentAnalyticsDataInternal,
-  getWorkloadAnalytics
+  getWorkloadAnalytics,
+  getPerformanceAnalytics
 };
