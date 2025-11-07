@@ -1,8 +1,10 @@
 const Distribution = require('../models/Distribution');
 const User = require('../models/User');
 const PerformanceSnapshot = require('../models/PerformanceSnapshot');
+const RiskSnapshot = require('../models/RiskSnapshot');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { calculateAgentPerformanceAsOf, backfillSnapshots } = require('../utils/performanceCalculator');
+const { calculateAgentRiskAsOf, backfillRiskSnapshots } = require('../utils/riskCalculator');
 
 /**
  * @desc    Helper to aggregate and fetch agent analytics data (reusable by reports)
@@ -222,9 +224,82 @@ const getPerformanceAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get detailed predictive SLA risk metrics and historical daily snapshots
+ * @route   GET /api/analytics/risk
+ * @access  Private (Admin)
+ */
+const getRiskAnalytics = asyncHandler(async (req, res) => {
+  const agents = await User.find({ role: 'agent', isActive: true });
+  const distributions = await Distribution.find({});
+
+  // Backfill daily snapshots for the past 7 days
+  await backfillRiskSnapshots(distributions, agents);
+
+  const agentDetails = [];
+  let totalScoreSum = 0;
+  let agentsWithActiveTasksCount = 0;
+  let criticalRisksCount = 0;
+  let upcomingSLABreaches = 0;
+
+  const scoreDistribution = {
+    'Low Risk': 0,
+    'Medium Risk': 0,
+    'High Risk': 0,
+    'Critical Risk': 0
+  };
+
+  for (const agent of agents) {
+    const currentRisk = calculateAgentRiskAsOf(agent._id, distributions, new Date());
+    
+    // Retrieve historical daily snapshots sorted chronologically
+    const history = await RiskSnapshot.find({ agentId: agent._id })
+      .sort({ date: 1 });
+
+    agentDetails.push({
+      agentId: agent._id,
+      name: agent.name,
+      email: agent.email,
+      metrics: currentRisk,
+      history: history.map(h => ({
+        date: h.date,
+        riskScore: h.riskScore,
+        workload: h.workload,
+        slaMetrics: h.slaMetrics
+      }))
+    });
+
+    if (currentRisk.activeTasks > 0) {
+      totalScoreSum += currentRisk.riskScore;
+      agentsWithActiveTasksCount++;
+    }
+
+    if (currentRisk.riskCategory === 'Critical Risk') {
+      criticalRisksCount++;
+    }
+
+    upcomingSLABreaches += currentRisk.approachingTasks;
+    scoreDistribution[currentRisk.riskCategory] = (scoreDistribution[currentRisk.riskCategory] || 0) + 1;
+  }
+
+  const teamAverageRisk = agentsWithActiveTasksCount > 0 ? Math.round((totalScoreSum / agentsWithActiveTasksCount) * 10) / 10 : 0;
+
+  res.status(200).json({
+    success: true,
+    globalMetrics: {
+      totalRisk: teamAverageRisk,
+      criticalRisksCount,
+      upcomingSLABreaches
+    },
+    scoreDistribution,
+    agents: agentDetails
+  });
+});
+
 module.exports = {
   getAgentAnalytics,
   fetchAgentAnalyticsDataInternal,
   getWorkloadAnalytics,
-  getPerformanceAnalytics
+  getPerformanceAnalytics,
+  getRiskAnalytics
 };
