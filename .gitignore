@@ -1,0 +1,12 @@
+# Environment Configuration
+backend/.env
+.env
+
+# Dependencies
+backend/node_modules/
+client/node_modules/
+
+# Local Dev / IDE Cache
+.idea/
+.vscode/
+*.log

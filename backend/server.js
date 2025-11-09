@@ -26,6 +26,7 @@ const analyticsRoutes = require('./routes/analytics');
 const reportRoutes = require('./routes/reports');
 const activityRoutes = require('./routes/activity');
 const auditRoutes = require('./routes/audit');
+const aiRoutes = require('./routes/ai');
 
 // Initialize Express app
 const app = express();
@@ -127,6 +128,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/ai', aiRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
