@@ -27,6 +27,8 @@ const reportRoutes = require('./routes/reports');
 const activityRoutes = require('./routes/activity');
 const auditRoutes = require('./routes/audit');
 const aiRoutes = require('./routes/ai');
+const automationRoutes = require('./routes/automation');
+const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
 const app = express();
@@ -129,6 +131,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/automation', automationRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -244,4 +247,5 @@ server.listen(PORT, () => {
 🛡️  Security: Helmet, CORS, Rate Limiting
 📈 Monitoring: Morgan, Health Check
   `);
+  initializeAutomationEngine(io);
 });
