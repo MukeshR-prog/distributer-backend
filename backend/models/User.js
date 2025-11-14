@@ -64,6 +64,14 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'agent'],
     default: 'agent'
   },
+  department: {
+    type: String,
+    default: 'General Operations'
+  },
+  team: {
+    type: String,
+    default: 'Default Team'
+  },
   isActive: {
     type: Boolean,
     default: true
