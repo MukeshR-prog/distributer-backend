@@ -29,6 +29,7 @@ const auditRoutes = require('./routes/audit');
 const aiRoutes = require('./routes/ai');
 const automationRoutes = require('./routes/automation');
 const executiveRoutes = require('./routes/executive');
+const commandCenterRoutes = require('./routes/commandCenter');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -134,6 +135,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/automation', automationRoutes);
 app.use('/api/executive', executiveRoutes);
+app.use('/api/command-center', commandCenterRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -250,4 +252,6 @@ server.listen(PORT, () => {
 📈 Monitoring: Morgan, Health Check
   `);
   initializeAutomationEngine(io);
+  const { initializeLiveMetricsEngine } = require('./services/liveMetricsEngine');
+  initializeLiveMetricsEngine(io);
 });
