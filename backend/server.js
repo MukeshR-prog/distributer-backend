@@ -31,6 +31,7 @@ const automationRoutes = require('./routes/automation');
 const executiveRoutes = require('./routes/executive');
 const commandCenterRoutes = require('./routes/commandCenter');
 const optimizationRoutes = require('./routes/optimization');
+const resourceRoutes = require('./routes/resources');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -138,6 +139,7 @@ app.use('/api/automation', automationRoutes);
 app.use('/api/executive', executiveRoutes);
 app.use('/api/command-center', commandCenterRoutes);
 app.use('/api/optimization', optimizationRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
