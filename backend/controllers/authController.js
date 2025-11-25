@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const SecurityEvent = require('../models/SecurityEvent');
 const { generateAuthResponse } = require('../utils/jwt');
 const { asyncHandler } = require('../middleware/errorHandler');
 
@@ -57,6 +58,16 @@ const login = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
   if (!user) {
+    await SecurityEvent.create({
+      eventType: 'Login Failure',
+      severity: 'medium',
+      metadata: {
+        email: email,
+        reason: 'User not found',
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        userAgent: req.headers['user-agent'] || 'Unknown'
+      }
+    });
     return res.status(401).json({
       success: false,
       message: 'Invalid email or password'
@@ -65,6 +76,17 @@ const login = asyncHandler(async (req, res) => {
 
   // Check if user is active
   if (!user.isActive) {
+    await SecurityEvent.create({
+      eventType: 'Login Failure',
+      userId: user._id,
+      severity: 'medium',
+      metadata: {
+        email: user.email,
+        reason: 'Account deactivated',
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        userAgent: req.headers['user-agent'] || 'Unknown'
+      }
+    });
     return res.status(401).json({
       success: false,
       message: 'Account is deactivated. Please contact administrator.'
@@ -74,6 +96,17 @@ const login = asyncHandler(async (req, res) => {
   // Check password
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
+    await SecurityEvent.create({
+      eventType: 'Login Failure',
+      userId: user._id,
+      severity: 'medium',
+      metadata: {
+        email: user.email,
+        reason: 'Incorrect password',
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        userAgent: req.headers['user-agent'] || 'Unknown'
+      }
+    });
     return res.status(401).json({
       success: false,
       message: 'Invalid email or password'
@@ -82,6 +115,19 @@ const login = asyncHandler(async (req, res) => {
 
   // Update last login
   await user.updateLastLogin();
+
+  // Log successful login security event
+  await SecurityEvent.create({
+    eventType: 'Login Success',
+    userId: user._id,
+    severity: 'low',
+    metadata: {
+      email: user.email,
+      role: user.role,
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+      userAgent: req.headers['user-agent'] || 'Unknown'
+    }
+  });
 
   // Log the login
   console.log(`🔐 User login: ${user.email} (${user.role})`);
@@ -167,6 +213,17 @@ const changePassword = asyncHandler(async (req, res) => {
   // Update password
   user.password = newPassword;
   await user.save();
+
+  // Log password change event
+  await SecurityEvent.create({
+    eventType: 'Password Change',
+    userId: user._id,
+    severity: 'low',
+    metadata: {
+      email: user.email,
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1'
+    }
+  });
 
   res.json({
     success: true,

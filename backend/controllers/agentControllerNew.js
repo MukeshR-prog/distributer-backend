@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const SecurityEvent = require('../models/SecurityEvent');
 const Record = require('../models/Record');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { buildFilters } = require('../utils/filterBuilder');
@@ -77,6 +78,19 @@ const createAgent = asyncHandler(async (req, res) => {
     userId: req.user._id,
     ipAddress: req.ip || req.headers['x-forwarded-for'],
     userAgent: req.headers['user-agent']
+  });
+
+  // Log security event
+  await SecurityEvent.create({
+    eventType: 'Agent Creation',
+    userId: req.user._id,
+    severity: 'low',
+    metadata: {
+      action: 'Created new agent',
+      agentId: agent._id,
+      agentName: agent.name,
+      agentEmail: agent.email
+    }
   });
 
   res.status(201).json({
@@ -235,6 +249,19 @@ const deleteAgent = asyncHandler(async (req, res) => {
     userId: req.user._id,
     ipAddress: req.ip || req.headers['x-forwarded-for'],
     userAgent: req.headers['user-agent']
+  });
+
+  // Log security event
+  await SecurityEvent.create({
+    eventType: 'Agent Creation', // User changes / agent deletions are logged as Agent Creation events
+    userId: req.user._id,
+    severity: 'medium',
+    metadata: {
+      action: 'Deactivated/Deleted agent account',
+      agentId: agent._id,
+      agentName: agent.name,
+      agentEmail: agent.email
+    }
   });
 
   res.status(200).json({

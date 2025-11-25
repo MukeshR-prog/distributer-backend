@@ -1,4 +1,5 @@
 const AutomationRule = require('../models/AutomationRule');
+const SecurityEvent = require('../models/SecurityEvent');
 const AutomationExecution = require('../models/AutomationExecution');
 const { simulateRule, calculateNextRun } = require('../services/automationEngine');
 const { logAudit } = require('../utils/auditLogger');
@@ -44,6 +45,18 @@ const createRule = asyncHandler(async (req, res) => {
     entityId: rule._id,
     newState: rule.toJSON(),
     userId: req.user._id
+  });
+
+  // Log Security Event
+  await SecurityEvent.create({
+    eventType: 'Automation Changes',
+    userId: req.user._id,
+    severity: 'low',
+    metadata: {
+      action: 'Created automation rule',
+      ruleId: rule._id,
+      ruleName: rule.name
+    }
   });
 
   res.status(201).json({
@@ -93,6 +106,19 @@ const updateRule = asyncHandler(async (req, res) => {
     userId: req.user._id
   });
 
+  // Log Security Event
+  await SecurityEvent.create({
+    eventType: 'Automation Changes',
+    userId: req.user._id,
+    severity: 'low',
+    metadata: {
+      action: 'Updated automation rule',
+      ruleId: rule._id,
+      ruleName: rule.name,
+      changes: req.body
+    }
+  });
+
   res.status(200).json({
     success: true,
     rule
@@ -121,6 +147,18 @@ const deleteRule = asyncHandler(async (req, res) => {
     entityId: id,
     previousState: rule.toJSON(),
     userId: req.user._id
+  });
+
+  // Log Security Event
+  await SecurityEvent.create({
+    eventType: 'Automation Changes',
+    userId: req.user._id,
+    severity: 'medium',
+    metadata: {
+      action: 'Deleted automation rule',
+      ruleId: id,
+      ruleName: rule.name
+    }
   });
 
   res.status(200).json({

@@ -64,6 +64,10 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'agent'],
     default: 'agent'
   },
+  roleTemplate: {
+    type: String,
+    default: 'agent'
+  },
   department: {
     type: String,
     default: 'General Operations'
