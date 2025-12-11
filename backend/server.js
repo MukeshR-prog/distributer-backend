@@ -34,6 +34,7 @@ const optimizationRoutes = require('./routes/optimization');
 const resourceRoutes = require('./routes/resources');
 const securityRoutes = require('./routes/security');
 const agentWorkspaceRoutes = require('./routes/agentWorkspace');
+const agentAnalyticsRoutes = require('./routes/agentAnalytics');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -144,6 +145,7 @@ app.use('/api/optimization', optimizationRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/agent-workspace', agentWorkspaceRoutes);
+app.use('/api/agent-workspace', agentAnalyticsRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
