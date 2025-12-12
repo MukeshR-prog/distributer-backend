@@ -337,6 +337,11 @@ const getMyRecords = asyncHandler(async (req, res) => {
         inProgress: allRecords.filter(r => r.status === 'in-progress').length,
         completed: allRecords.filter(r => r.status === 'completed').length,
         failed: allRecords.filter(r => r.status === 'failed').length,
+        totalTasks: allRecords.length,
+        completedTasks: allRecords.filter(r => r.status === 'completed').length,
+        pendingTasks: allRecords.filter(r => r.status === 'pending').length,
+        overdueTasks: overdueCount,
+        criticalTasks: criticalTasks,
         slaStats: {
           overdueCount,
           approachingDeadlineCount,

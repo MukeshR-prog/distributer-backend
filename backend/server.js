@@ -33,6 +33,7 @@ const commandCenterRoutes = require('./routes/commandCenter');
 const optimizationRoutes = require('./routes/optimization');
 const resourceRoutes = require('./routes/resources');
 const securityRoutes = require('./routes/security');
+const agentWorkspaceRoutes = require('./routes/agentWorkspace');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -142,6 +143,7 @@ app.use('/api/command-center', commandCenterRoutes);
 app.use('/api/optimization', optimizationRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/security', securityRoutes);
+app.use('/api/agent-workspace', agentWorkspaceRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
