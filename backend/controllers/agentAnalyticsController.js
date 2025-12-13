@@ -1,23 +1,19 @@
 const asyncHandler = require('express-async-handler');
 const {
-  fetchAgentRecords,
-  calculateCompletionRate,
-  calculateSLACompliance,
-  calculateAverageResolutionTime,
-  calculateWeeklyPerformance,
-  calculateMonthlyPerformance,
-  calculateProductivityScore,
-  calculateTeamRanking
-} = require('../services/agentAnalyticsService');
+  calculateCompletionMetrics,
+  calculateSLAMetrics,
+  calculateResolutionMetrics,
+  calculateProductivityScore
+} = require('../services/agentPerformanceEngine');
 
 // Simple 5-minute memory cache
 const cache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * @desc    Get Agent Productivity Analytics and personal performance insights
+ * @desc    Get Agent Productivity Analytics
  * @route   GET /api/agent-workspace/analytics
- * @access  Private (Agent)
+ * @access  Private (Agent Only)
  */
 const getAgentAnalytics = asyncHandler(async (req, res) => {
   const agentId = req.user._id.toString();
@@ -27,7 +23,7 @@ const getAgentAnalytics = asyncHandler(async (req, res) => {
   if (cache.has(agentId)) {
     const { timestamp, data } = cache.get(agentId);
     if (now - timestamp < CACHE_TTL_MS) {
-      return res.json({
+      return res.status(200).json({
         success: true,
         cached: true,
         ...data
@@ -35,26 +31,19 @@ const getAgentAnalytics = asyncHandler(async (req, res) => {
     }
   }
 
-  // Pre-fetch records to reuse across calculation functions for performance
-  const records = await fetchAgentRecords(agentId);
-
-  // Compute analytics metrics
-  const productivityScore = await calculateProductivityScore(agentId, records);
-  const completionMetrics = await calculateCompletionRate(agentId, records);
-  const slaMetrics = await calculateSLACompliance(agentId, records);
-  const resolutionMetrics = await calculateAverageResolutionTime(agentId, records);
-  const weeklyTrend = await calculateWeeklyPerformance(agentId, records);
-  const monthlyTrend = await calculateMonthlyPerformance(agentId, records);
-  const ranking = await calculateTeamRanking(agentId);
+  // Compute metrics concurrently for performance
+  const [completionMetrics, slaMetrics, resolutionMetrics, productivity] = await Promise.all([
+    calculateCompletionMetrics(agentId),
+    calculateSLAMetrics(agentId),
+    calculateResolutionMetrics(agentId),
+    calculateProductivityScore(agentId)
+  ]);
 
   const analyticsData = {
-    productivityScore,
+    productivity,
     completionMetrics,
     slaMetrics,
-    resolutionMetrics,
-    weeklyTrend,
-    monthlyTrend,
-    ranking
+    resolutionMetrics
   };
 
   // Cache response payload
@@ -63,7 +52,7 @@ const getAgentAnalytics = asyncHandler(async (req, res) => {
     data: analyticsData
   });
 
-  res.json({
+  res.status(200).json({
     success: true,
     cached: false,
     ...analyticsData
