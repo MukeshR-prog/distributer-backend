@@ -93,3 +93,49 @@ The Agent Analytics API exposes calculated metrics to the agent portal.
   }
 }
 ```
+
+---
+
+## 4. Agent Analytics Dashboard UI Architecture
+
+The frontend is integrated as a dedicated tab inside the Agent Console Dashboard. It leverages Next.js Client Components and responsive grids to render real-time performance analytics.
+
+```mermaid
+graph TD
+    Dashboard["Agent Dashboard (page.js)"] -->|Mounts| Toolbar["AnalyticsToolbar.jsx"]
+    Dashboard -->|Conditional Render| EmptyState["AnalyticsEmptyState.jsx"]
+    Dashboard -->|Data Bind| ScoreCard["ProductivityScoreCard.jsx"]
+    Dashboard -->|Data Bind| Breakdown["ProductivityBreakdown.jsx"]
+    Breakdown -->|Grid Layout| Summary1["AnalyticsSummaryCard (Completion)"]
+    Breakdown -->|Grid Layout| Summary2["AnalyticsSummaryCard (SLA)"]
+    Breakdown -->|Grid Layout| Summary3["AnalyticsSummaryCard (Speed)"]
+    Breakdown -->|Grid Layout| Summary4["AnalyticsSummaryCard (Count)"]
+```
+
+### Session Caching Flow
+To reduce API request frequency, the dashboard stores response payloads locally:
+1. **Cache Read**: On active tab transition or dashboard reload, the client checks `window.sessionStorage` under `agent_analytics_cache`.
+2. **TTL Verification**: The cached payload is checked against a 5-minute TTL (Time-To-Live).
+3. **Optimistic Loading**: If the cache is valid, the UI loads immediately.
+4. **Background Refresh**: If the cache exists but is expired, it displays the cached data first, then triggers a background fetch to update the UI and rewrite the cache.
+5. **Invalidation**: Clicking the "Refresh Metrics" action in `AnalyticsToolbar` bypasses the cache, forcing an API fetch.
+
+---
+
+## 5. Productivity KPI Rendering Flow
+
+Metrics are calculated and rendered dynamically through specialized sub-components:
+- **AnalyticsSkeleton**: Displays loading shells with pulsing animation.
+- **ProductivityScoreCard**: Renders the final score and uses a gradient background matching the grade system (A+ = Emerald, A = Green, B = Blue, C = Amber, D = Red).
+- **ProductivityBreakdown**: Configures a 2x2 grid containing four instances of `AnalyticsSummaryCard` representing Completion, SLA, Resolution Time, and Completed Counts. Displays trend indicator flags (▲ Improved, ▼ Declined, ▬ Stable) when comparative datasets are passed.
+- **AnalyticsEmptyState**: Displays if the agent has not completed any tasks. Features an illustration and a "Go To Tasks" CTA to redirect back to the workspace queue.
+
+---
+
+## 6. Future Analytics Expansion Path
+
+A collapsed placeholders section titled "Coming Soon" shows future milestones in the roadmap:
+- **Weekly Trends**: Historical charts.
+- **Team Ranking**: Divisional leaderboards.
+- **AI Coaching**: LLM feedback and capacity optimization recommendations.
+- **Achievements**: Performance badges and completed milestones.
