@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const activityLogSchema = new mongoose.Schema({
   actionType: {
     type: String,
-    enum: ['AGENT_CREATED', 'AGENT_DELETED', 'DISTRIBUTION_UPLOADED', 'REPORT_GENERATED', 'STATUS_UPDATED'],
+    enum: ['AGENT_CREATED', 'AGENT_DELETED', 'DISTRIBUTION_UPLOADED', 'REPORT_GENERATED', 'STATUS_UPDATED', 'AGENT_ANALYTICS_VIEWED', 'PERFORMANCE_REPORT_VIEWED'],
     required: [true, 'Action type is required']
   },
   entityType: {

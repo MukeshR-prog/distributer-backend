@@ -91,3 +91,25 @@ graph TD
   - **Role**: Action header showing refresh trigger buttons and time logs.
 - **Path**: [AnalyticsEmptyState.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/AnalyticsEmptyState.jsx) [NEW]
   - **Role**: Standard view rendered when agent has no data, offering a CTA link redirecting back to the Workspace tasks tab.
+
+### 6. Workspace Rankings Panel
+- **Path**: [RankingCard.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/RankingCard.jsx) [NEW]
+  - **Role**: Display Global, Department, and Team Rank along with highlight leadership badges.
+
+### 7. Performance Overlay Trend Chart
+- **Path**: [PerformanceTrendChart.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/PerformanceTrendChart.jsx) [NEW/MODIFY]
+  - **Role**: Custom SVG chart drawing comparative current vs previous lines for Weekly (14 days) and Monthly (8 weeks) periods. Supports PNG/SVG client-side downloads.
+
+### 8. Delta Insights & Achievements Cards
+- **Path**: [ImprovementInsights.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/ImprovementInsights.jsx) [NEW]
+  - **Role**: Displays 30-day performance trends and rank movement deltas.
+- **Path**: [PersonalBestCard.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/PersonalBestCard.jsx) [NEW]
+  - **Role**: Showcases all-time records (highest score, peak task count, longest streak, fastest speed).
+
+### 9. Trend Switcher Selector
+- **Path**: [TrendSwitcher.jsx](file:///d:/mern/distributer/client/src/components/agent-analytics/TrendSwitcher.jsx) [NEW]
+  - **Role**: Button toggle controlling the chart's Weekly/Monthly active state.
+
+### 10. Snapshot Caching Schema
+- **Path**: [AgentPerformanceSnapshot.js](file:///d:/mern/distributer/backend/models/AgentPerformanceSnapshot.js) [NEW]
+  - **Role**: Persistent document schema enabling fast DB-level caching of historical performance.

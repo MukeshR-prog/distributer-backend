@@ -130,12 +130,34 @@ Metrics are calculated and rendered dynamically through specialized sub-componen
 - **ProductivityBreakdown**: Configures a 2x2 grid containing four instances of `AnalyticsSummaryCard` representing Completion, SLA, Resolution Time, and Completed Counts. Displays trend indicator flags (▲ Improved, ▼ Declined, ▬ Stable) when comparative datasets are passed.
 - **AnalyticsEmptyState**: Displays if the agent has not completed any tasks. Features an illustration and a "Go To Tasks" CTA to redirect back to the workspace queue.
 
+## 6. Historical Performance Snapshot Cache
+
+To prevent expensive recalculation of past performance indices (Productivity Score, SLA Compliance, Completion Rate, and Rank), the system utilizes a persistent snapshot layer (`AgentPerformanceSnapshot` model).
+- **Auto-Generation**: During analytics request processing, the engine identifies any days/weeks in the target ranges lacking a snapshot and calculates them in-memory from past distribution history, then stores the snapshot in the database.
+- **Normalizing Date Keys**: Snape dates (`generatedAt`) are normalized to Midnight (`00:00:00.000`) for robust uniqueness and cache lookup indexing.
+
 ---
 
-## 6. Future Analytics Expansion Path
+## 7. Dynamic Ranking & Rank Movement
 
-A collapsed placeholders section titled "Coming Soon" shows future milestones in the roadmap:
-- **Weekly Trends**: Historical charts.
-- **Team Ranking**: Divisional leaderboards.
-- **AI Coaching**: LLM feedback and capacity optimization recommendations.
-- **Achievements**: Performance badges and completed milestones.
+Agents are ranked against their workspace peers using a composite performance score:
+$$RankScore = ProductivityScore + CompletionRate + SLACompliance$$
+
+- **Global, Department, and Team Ranks**: The engine filters, orders, and ranks agents at the Global, Department, and Team levels.
+- **Rank Movement**: The system compares current rank with rank 30 days ago, calculating rank direction (up/down/stable) and delta magnitude (e.g. `Moved up 4 positions`).
+- **Leader Badges**: Rendered client-side on the `RankingCard` (e.g., `#1` in department triggers a `Department Leader` badge).
+
+---
+
+## 8. Trend Comparison Engine & Personal Bests
+
+- **Overlay Comparison**: The `PerformanceTrendChart` visualizes current weekly/monthly lines alongside dashed lines representing previous period performance curves.
+- **Personal Achievements**: An in-memory achievements engine calculates and lists peak scores, streak durations, best completion volumes, and speed records inside `PersonalBestCard`.
+
+---
+
+## 9. Adoption Auditing
+
+Adoption statistics are logged directly into `ActivityLog` to analyze usage:
+- `AGENT_ANALYTICS_VIEWED`: Emitted upon standard analytics page loads.
+- `PERFORMANCE_REPORT_VIEWED`: Emitted when forcing manual refreshes (refresh button).
