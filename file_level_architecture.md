@@ -113,3 +113,29 @@ graph TD
 ### 10. Snapshot Caching Schema
 - **Path**: [AgentPerformanceSnapshot.js](file:///d:/mern/distributer/backend/models/AgentPerformanceSnapshot.js) [NEW]
   - **Role**: Persistent document schema enabling fast DB-level caching of historical performance.
+
+### 11. AI Coaching & Recommendation Tracking Models
+- **Path**: [AgentCoachingSnapshot.js](file:///d:/mern/distributer/backend/models/AgentCoachingSnapshot.js) [NEW]
+  - **Role**: Stores generated AI/fallback coaching metrics, strengths, weaknesses, structured goals, focus area, and motivation message.
+- **Path**: [CoachingAction.js](file:///d:/mern/distributer/backend/models/CoachingAction.js) [NEW]
+  - **Role**: Tracks status (completed, saved, dismissed) of user interactions with coaching recommendations.
+
+### 12. Coaching Routers and Controllers
+- **Path**: [agentAI.js](file:///d:/mern/distributer/backend/routes/agentAI.js) [NEW]
+  - **Role**: Defines endpoints for requesting coaching updates, history timeline, and recommendation updates.
+- **Path**: [agentAICoachingController.js](file:///d:/mern/distributer/backend/controllers/agentAICoachingController.js) [NEW]
+  - **Role**: Handles 15-minute refresh cooldown validations, merges recommendation progress statuses, and retrieves snapshots.
+- **Path**: [agentCoachingEngine.js](file:///d:/mern/distributer/backend/services/agentCoachingEngine.js) [NEW]
+  - **Role**: Combines metrics, generates LLM Groq payloads or runs rule-based engine fallbacks, and creates cache snapshots in the database.
+
+### 13. Coaching UI Panels & Timeline
+- **Path**: [CoachingSummaryCard.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/CoachingSummaryCard.jsx) [NEW]
+  - **Role**: Shows performance overview text, confidence indicators, motivation quotes, and rank/score improvement success animations.
+- **Path**: [CoachingImpactCard.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/CoachingImpactCard.jsx) [NEW]
+  - **Role**: Measures coaching efficiency by tracking goals achieved, followed recommendations, and delta score deltas.
+- **Path**: [RecommendationsPanel.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/RecommendationsPanel.jsx) [NEW]
+  - **Role**: Lists recommendations and lets agents trigger status updates (Complete, Save, Dismiss).
+- **Path**: [GoalPlanner.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/GoalPlanner.jsx) [NEW]
+  - **Role**: Displays targeted upcoming goals with difficulty rating badges and estimated productivity index gains.
+- **Path**: [CoachingTimeline.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/CoachingTimeline.jsx) [NEW]
+  - **Role**: Visualizes historical coaching scores and summaries over time.

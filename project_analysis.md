@@ -161,3 +161,29 @@ $$RankScore = ProductivityScore + CompletionRate + SLACompliance$$
 Adoption statistics are logged directly into `ActivityLog` to analyze usage:
 - `AGENT_ANALYTICS_VIEWED`: Emitted upon standard analytics page loads.
 - `PERFORMANCE_REPORT_VIEWED`: Emitted when forcing manual refreshes (refresh button).
+
+---
+
+## 10. Agent Coaching Engine & Productivity Insights
+
+The **Agent Coaching Engine** transforms raw analytical measurements into actionable recommendations and structured goals, implementing a premium personal coaching experience.
+
+### AI Coaching Flow & Fallback Architecture
+- **API Endpoint**: `GET /api/agent-ai/coaching`
+- **AI Synthesis**: Leverages the Groq API service (`callGroq`) with a detailed system prompt defining strict schema formats. Inputs include historical trends, ranking movement, and productivity metrics.
+- **Rule-Based Fallback**: If the AI request times out or returns malformed structures, the service triggers the fallback engine (`generateRuleBasedCoaching`) to generate custom rule-based insights dynamically. This ensures that the frontend never encounters rendering breaks.
+
+### Coaching Snapshot Cache & Refresh Protection
+- **Snapshot Persistence**: Generated coaching insights are stored inside `AgentCoachingSnapshot` to enable history tracking, and prevent redundant generation calls.
+- **Smart Refresh Cooldown**: To protect against redundant LLM API rate limit hits, a `15-minute refresh cooldown` is enforced. Fresh calls are blocked during this window, and the cache is served directly from the database snapshot.
+
+### Recommendation Action Tracking
+- The system supports recommendation status updates (Complete, Save for Later, Dismiss) stored in `CoachingAction` collection.
+- Statuses are merged dynamically into recommendation lists returned by the API.
+
+### Goal Difficulty & Impact System
+- Goals are saved as structured objects with difficulty ratings (`easy`, `medium`, `hard`) and estimated score impacts (e.g. `+15%`), mapping gamified targets dynamically.
+
+### Coaching Impact Analytics & Weekly Timeline
+- **ROI Impact Tracking**: The dashboard displays followed recommendations, achieved targets, and productivity score deltas as tangible coaching business value.
+- **Weekly History Timeline**: Renders past weeks' snapshots in a vertical timeline, showing historical scores, summaries, and focus areas.
