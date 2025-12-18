@@ -187,3 +187,40 @@ The **Agent Coaching Engine** transforms raw analytical measurements into action
 ### Coaching Impact Analytics & Weekly Timeline
 - **ROI Impact Tracking**: The dashboard displays followed recommendations, achieved targets, and productivity score deltas as tangible coaching business value.
 - **Weekly History Timeline**: Renders past weeks' snapshots in a vertical timeline, showing historical scores, summaries, and focus areas.
+
+---
+
+## 11. Agent Achievements & Gamification System
+
+The **Agent Achievements & Gamification System** introduces leveling progression, reward points, dynamic streak calculations, and milestones badge unlocking to gamify operations.
+
+### Experience (XP) & Point Scoring Engine
+Points and experience are earned dynamically through operational activities:
+- **Task Completion**: `+100 XP` and `+50 Points` per completed record.
+- **On-Time SLA Completion**: `+50 XP` and `+20 Points` bonus per task completed on time.
+- **Achievement Unlocked**: `+200 XP` and achievement-specific points (e.g. `+300` or `+500` Points) mapped from the definitions.
+
+### Level Up & Tier Progression
+Level is calculated from total accumulated XP using a linear threshold:
+$$Level = \lfloor \frac{TotalXP}{1000} \rfloor + 1$$
+
+- **Level Tiers**:
+  - `Level 1-4`: Bronze Tier
+  - `Level 5-9`: Silver Tier
+  - `Level 10-14`: Gold Tier
+  - `Level 15-19`: Platinum Tier
+  - `Level 20+`: Diamond Tier
+- When an agent crosses a level boundary, a `LEVEL_UP` event is registered in `ActivityLog`, and a Socket.IO event is broadcast to trigger UI celebrations.
+
+### Daily Streaks Calculation
+Streaks track consecutive days on which at least one distribution record was completed.
+- **Algorithm**: Group completed records by local date ascending, sort, and look for differences of exactly 1 day.
+- **Active State**: The streak is active if there is at least one completion today or yesterday. If both are missing, the current streak resets to `0`.
+
+### Real-Time Live Feed Auditing
+Achievement events trigger log entry records in the administrative database and feed alerts:
+- `ACHIEVEMENT_UNLOCKED`: Emitted immediately upon crossing criteria thresholds.
+- `LEVEL_UP`: Emitted upon crossing XP level boundaries.
+- `STREAK_CREATED`: Tracks active streak expansion.
+- Audits are pushed live to the CommandCenter's War Room feed and NotificationCenter via WebSocket emissions.
+

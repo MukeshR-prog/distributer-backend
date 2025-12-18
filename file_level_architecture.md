@@ -139,3 +139,30 @@ graph TD
   - **Role**: Displays targeted upcoming goals with difficulty rating badges and estimated productivity index gains.
 - **Path**: [CoachingTimeline.jsx](file:///d:/mern/distributer/client/src/components/agent-ai/CoachingTimeline.jsx) [NEW]
   - **Role**: Visualizes historical coaching scores and summaries over time.
+
+### 14. Achievements & Gamification Modules
+- **Path**: [Achievement.js](file:///d:/mern/distributer/backend/models/Achievement.js) [NEW]
+  - **Role**: Mongoose schema for master achievements definitions.
+- **Path**: [AgentAchievement.js](file:///d:/mern/distributer/backend/models/AgentAchievement.js) [NEW]
+  - **Role**: tracks progress and unlocks for each agent-achievement mapping.
+- **Path**: [achievementEngine.js](file:///d:/mern/distributer/backend/services/achievementEngine.js) [NEW]
+  - **Role**: Calculates streaks, checks achievements thresholds, evaluates points/XP/level up, and triggers activity logging.
+- **Path**: [gamificationController.js](file:///d:/mern/distributer/backend/controllers/gamificationController.js) [NEW]
+  - **Role**: Exposes endpoints for profile state, achievements list, and milestones reward timeline.
+- **Path**: [gamification.js](file:///d:/mern/distributer/backend/routes/gamification.js) [NEW]
+  - **Role**: Handles router endpoints `/profile`, `/achievements`, and `/rewards`.
+
+### 15. Achievements & Progression UI Components
+- **Path**: [AgentLevelCard.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/AgentLevelCard.jsx) [NEW]
+  - **Role**: Renders xp progress slider, level indicator, and points balance in a themed gradient card.
+- **Path**: [StreakTracker.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/StreakTracker.jsx) [NEW]
+  - **Role**: Renders current and longest streaks alongside a 7-day visual calendar grid.
+- **Path**: [AchievementProgress.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/AchievementProgress.jsx) [NEW]
+  - **Role**: Displays unlocked badge ratios and category breakdown summaries.
+- **Path**: [AchievementGrid.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/AchievementGrid.jsx) [NEW]
+  - **Role**: Renders collection cards for master achievements showing unlocked badges vs lock overlays.
+- **Path**: [AchievementBadge.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/AchievementBadge.jsx) [NEW]
+  - **Role**: Renders visual SVG badges styled conditionally by unlock state.
+- **Path**: [RewardsTimeline.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/RewardsTimeline.jsx) [NEW]
+  - **Role**: Shows checkpoint progression and points claims timeline.
+
