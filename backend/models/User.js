@@ -118,6 +118,22 @@ const userSchema = new mongoose.Schema({
   longestStreak: {
     type: Number,
     default: 0
+  },
+  unlockedTitles: {
+    type: [String],
+    default: []
+  },
+  unlockedThemes: {
+    type: [String],
+    default: []
+  },
+  selectedTitle: {
+    type: String,
+    default: ""
+  },
+  selectedTheme: {
+    type: String,
+    default: ""
   }
 }, {
   timestamps: true,

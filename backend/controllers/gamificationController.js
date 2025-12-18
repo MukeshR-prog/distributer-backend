@@ -4,6 +4,24 @@ const Achievement = require('../models/Achievement');
 const AgentAchievement = require('../models/AgentAchievement');
 const { evaluateAchievements } = require('../services/achievementEngine');
 
+const {
+  getCurrentSeason,
+  checkAndClosePastSeasons,
+  getPeriodLeaderboard,
+  getWeeklyLeaderboard,
+  getMonthlyLeaderboard,
+  getAllTimeLeaderboard
+} = require('../services/leaderboardEngine');
+const { evaluateChallenges } = require('../services/challengeEngine');
+const {
+  seedRewards,
+  redeemReward,
+  equipTitle,
+  equipTheme,
+  getRedemptionHistory
+} = require('../services/rewardEngine');
+const RewardCatalog = require('../models/RewardCatalog');
+
 // Maps numeric level to gamified operational status tier name
 const getLevelTierName = (level) => {
   if (level >= 20) return "Diamond Tier";
@@ -41,7 +59,9 @@ const getGamificationProfile = asyncHandler(async (req, res) => {
     longestStreak: user.longestStreak || 0,
     currentXPInLevel,
     xpProgressPercent,
-    xpNextLevel: 1000
+    xpNextLevel: 1000,
+    selectedTitle: user.selectedTitle || '',
+    selectedTheme: user.selectedTheme || ''
   });
 });
 
@@ -110,8 +130,211 @@ const getRewardsTimeline = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get Current Season and Leaderboard Standings
+ * @route   GET /api/gamification/leaderboard/season
+ * @access  Private (Agent Only)
+ */
+const getSeasonLeaderboard = asyncHandler(async (req, res) => {
+  const io = req.app.get('io');
+  await checkAndClosePastSeasons(io);
+  const season = await getCurrentSeason();
+  const standings = await getPeriodLeaderboard(season.startDate, season.endDate);
+  
+  res.status(200).json({
+    success: true,
+    season: {
+      id: season._id,
+      seasonName: season.seasonName,
+      startDate: season.startDate,
+      endDate: season.endDate,
+      rewards: season.rewards
+    },
+    standings
+  });
+});
+
+/**
+ * @desc    Get Weekly Leaderboard Standings
+ * @route   GET /api/gamification/leaderboard/weekly
+ * @access  Private (Agent Only)
+ */
+const getWeeklyLeaderboardHandler = asyncHandler(async (req, res) => {
+  const standings = await getWeeklyLeaderboard();
+  res.status(200).json({
+    success: true,
+    standings
+  });
+});
+
+/**
+ * @desc    Get Monthly Leaderboard Standings
+ * @route   GET /api/gamification/leaderboard/monthly
+ * @access  Private (Agent Only)
+ */
+const getMonthlyLeaderboardHandler = asyncHandler(async (req, res) => {
+  const standings = await getMonthlyLeaderboard();
+  res.status(200).json({
+    success: true,
+    standings
+  });
+});
+
+/**
+ * @desc    Get All-Time Leaderboard Standings
+ * @route   GET /api/gamification/leaderboard/all-time
+ * @access  Private (Agent Only)
+ */
+const getAllTimeLeaderboardHandler = asyncHandler(async (req, res) => {
+  const standings = await getAllTimeLeaderboard();
+  res.status(200).json({
+    success: true,
+    standings
+  });
+});
+
+/**
+ * @desc    Get and evaluate agent active daily/weekly challenges
+ * @route   GET /api/gamification/challenges
+ * @access  Private (Agent Only)
+ */
+const getChallengesHandler = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const io = req.app.get('io');
+  const challenges = await evaluateChallenges(agentId, io);
+  
+  res.status(200).json({
+    success: true,
+    challenges
+  });
+});
+
+/**
+ * @desc    Get Rewards Catalog
+ * @route   GET /api/gamification/rewards/catalog
+ * @access  Private (Agent Only)
+ */
+const getRewardsCatalogHandler = asyncHandler(async (req, res) => {
+  await seedRewards();
+  const catalog = await RewardCatalog.find().sort({ costPoints: 1 });
+  
+  const user = await User.findById(req.user._id);
+  
+  res.status(200).json({
+    success: true,
+    catalog,
+    unlockedTitles: user.unlockedTitles || [],
+    unlockedThemes: user.unlockedThemes || [],
+    selectedTitle: user.selectedTitle || '',
+    selectedTheme: user.selectedTheme || ''
+  });
+});
+
+/**
+ * @desc    Redeem reward from catalog
+ * @route   POST /api/gamification/rewards/redeem
+ * @access  Private (Agent Only)
+ */
+const redeemRewardHandler = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const { catalogId } = req.body;
+  const io = req.app.get('io');
+
+  if (!catalogId) {
+    return res.status(400).json({ success: false, message: "catalogId is required" });
+  }
+
+  try {
+    const { user, redemption } = await redeemReward(agentId, catalogId, io);
+    res.status(200).json({
+      success: true,
+      message: "Reward redeemed successfully!",
+      points: user.points,
+      unlockedTitles: user.unlockedTitles,
+      unlockedThemes: user.unlockedThemes
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @desc    Get point redemption history
+ * @route   GET /api/gamification/rewards/history
+ * @access  Private (Agent Only)
+ */
+const getRedemptionHistoryHandler = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const history = await getRedemptionHistory(agentId);
+  res.status(200).json({
+    success: true,
+    history
+  });
+});
+
+/**
+ * @desc    Equip unlocked title
+ * @route   POST /api/gamification/rewards/equip-title
+ * @access  Private (Agent Only)
+ */
+const equipTitleHandler = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const { title } = req.body;
+
+  try {
+    const user = await equipTitle(agentId, title);
+    res.status(200).json({
+      success: true,
+      message: "Title updated successfully!",
+      selectedTitle: user.selectedTitle
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @desc    Equip unlocked theme
+ * @route   POST /api/gamification/rewards/equip-theme
+ * @access  Private (Agent Only)
+ */
+const equipThemeHandler = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const { theme } = req.body;
+
+  try {
+    const user = await equipTheme(agentId, theme);
+    res.status(200).json({
+      success: true,
+      message: "Theme updated successfully!",
+      selectedTheme: user.selectedTheme
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = {
   getGamificationProfile,
   getAgentAchievements,
-  getRewardsTimeline
+  getRewardsTimeline,
+  getSeasonLeaderboard,
+  getWeeklyLeaderboardHandler,
+  getMonthlyLeaderboardHandler,
+  getAllTimeLeaderboardHandler,
+  getChallengesHandler,
+  getRewardsCatalogHandler,
+  redeemRewardHandler,
+  getRedemptionHistoryHandler,
+  equipTitleHandler,
+  equipThemeHandler
 };

@@ -166,3 +166,38 @@ graph TD
 - **Path**: [RewardsTimeline.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/RewardsTimeline.jsx) [NEW]
   - **Role**: Shows checkpoint progression and points claims timeline.
 
+### 16. Seasonal Leaderboard & Podium UI
+- **Path**: [SeasonLeaderboard.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/SeasonLeaderboard.jsx) [NEW]
+  - **Role**: Main container for seasonal standings. Toggles between Active Season, Weekly, Monthly, and All-Time leaderboards.
+- **Path**: [LeaderboardPodium.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/LeaderboardPodium.jsx) [NEW]
+  - **Role**: Premium podium layout showing the top 3 agents, including avatar slots, selected titles, levels, and composite scores.
+- **Path**: [LeaderboardSeason.js](file:///d:/mern/distributer/backend/models/LeaderboardSeason.js) [NEW]
+  - **Role**: Schema tracking active and past seasons (dates, top performers, reward parameters).
+- **Path**: [leaderboardEngine.js](file:///d:/mern/distributer/backend/services/leaderboardEngine.js) [NEW]
+  - **Role**: Computes composite rankings (Productivity + Completion + SLA) for periods and closes past seasons to distribute points automatically.
+
+### 17. Challenges & Daily/Weekly Missions
+- **Path**: [MissionTracker.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/MissionTracker.jsx) [NEW]
+  - **Role**: Main view displaying active missions, filtering between Daily and Weekly.
+- **Path**: [ChallengeCard.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/ChallengeCard.jsx) [NEW]
+  - **Role**: Progress meter card rendering title, description, targets vs current values, and reward claim tags.
+- **Path**: [Challenge.js](file:///d:/mern/distributer/backend/models/Challenge.js) [NEW]
+  - **Role**: Model defining daily and weekly operations challenges.
+- **Path**: [AgentChallenge.js](file:///d:/mern/distributer/backend/models/AgentChallenge.js) [NEW]
+  - **Role**: Tracks individual agent progress, reset states, and completion status.
+- **Path**: [challengeEngine.js](file:///d:/mern/distributer/backend/services/challengeEngine.js) [NEW]
+  - **Role**: Seeds standard daily/weekly challenges and evaluates progress dynamically upon task completions.
+
+### 18. Virtual Rewards Store & Custom Equips
+- **Path**: [RewardStore.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/RewardStore.jsx) [NEW]
+  - **Role**: Shop dashboard displaying point balance, item catalog, equipping triggers, and historical redemptions logs.
+- **Path**: [RewardCard.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/RewardCard.jsx) [NEW]
+  - **Role**: Formats catalog store item cards, showing point costs, preview areas, ownership statuses, and trigger actions.
+- **Path**: [RewardHistory.jsx](file:///d:/mern/distributer/client/src/components/agent-achievements/RewardHistory.jsx) [NEW]
+  - **Role**: Table list showing history log details of redeemed titles, themes, and badges.
+- **Path**: [RewardCatalog.js](file:///d:/mern/distributer/backend/models/RewardCatalog.js) [NEW]
+  - **Role**: Model storing unlockable custom titles, themes, and badges available in the store.
+- **Path**: [RewardRedemption.js](file:///d:/mern/distributer/backend/models/RewardRedemption.js) [NEW]
+  - **Role**: Model tracking completed redemption logs.
+- **Path**: [rewardEngine.js](file:///d:/mern/distributer/backend/services/rewardEngine.js) [NEW]
+  - **Role**: Seeds the rewards catalog, validates balances, records redemptions, and manages equipped title/theme overrides in agent user profiles.
