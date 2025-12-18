@@ -404,6 +404,12 @@ const updateRecordStatus = asyncHandler(async (req, res) => {
 
     await distribution.save();
 
+    // Trigger Gamification & Achievements Engine asynchronously
+    const { evaluateAchievements } = require('../services/achievementEngine');
+    evaluateAchievements(req.user._id, req.app.get('io')).catch(err => {
+      console.error('Gamification engine execution failed:', err.message);
+    });
+
     // Log activity
     await logActivity({
       actionType: 'STATUS_UPDATED',
