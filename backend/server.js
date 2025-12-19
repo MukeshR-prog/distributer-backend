@@ -37,6 +37,7 @@ const agentWorkspaceRoutes = require('./routes/agentWorkspace');
 const agentAnalyticsRoutes = require('./routes/agentAnalytics');
 const agentAIRoutes = require('./routes/agentAI');
 const gamificationRoutes = require('./routes/gamification');
+const collaborationRoutes = require('./routes/collaboration');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -150,6 +151,7 @@ app.use('/api/agent-workspace', agentWorkspaceRoutes);
 app.use('/api/agent-workspace', agentAnalyticsRoutes);
 app.use('/api/agent-ai', agentAIRoutes);
 app.use('/api/gamification', gamificationRoutes);
+app.use('/api/collaboration', collaborationRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -183,6 +185,60 @@ io.on('connection', (socket) => {
   socket.on('taskUpdate', (data) => {
     // Broadcast task updates to relevant users
     socket.broadcast.emit('taskUpdated', data);
+  });
+
+  // Channel subscription
+  socket.on('join-channel', (data) => {
+    const { channelId } = data;
+    socket.join(`channel_${channelId}`);
+    console.log(`💬 User ${socket.id} joined channel_${channelId}`);
+  });
+
+  socket.on('leave-channel', (data) => {
+    const { channelId } = data;
+    socket.leave(`channel_${channelId}`);
+    console.log(`💬 User ${socket.id} left channel_${channelId}`);
+  });
+
+  // Message Transmission
+  socket.on('send-message', (data) => {
+    const { channelId } = data;
+    io.to(`channel_${channelId}`).emit('new-message', data);
+  });
+
+  socket.on('edit-message', (data) => {
+    const { channelId } = data;
+    io.to(`channel_${channelId}`).emit('message-edited', data);
+  });
+
+  socket.on('delete-message', (data) => {
+    const { channelId, messageId } = data;
+    io.to(`channel_${channelId}`).emit('message-deleted', { messageId, channelId });
+  });
+
+  // Message Typing
+  socket.on('typing', (data) => {
+    const { channelId, userId, userName } = data;
+    socket.to(`channel_${channelId}`).emit('typing', { channelId, userId, userName });
+  });
+
+  socket.on('stop-typing', (data) => {
+    const { channelId, userId } = data;
+    socket.to(`channel_${channelId}`).emit('stop-typing', { channelId, userId });
+  });
+
+  // Read message receipt
+  socket.on('message-read', async (data) => {
+    const { channelId, messageId, userId } = data;
+    try {
+      const ChannelMessage = require('./models/ChannelMessage');
+      await ChannelMessage.findByIdAndUpdate(messageId, {
+        $addToSet: { readBy: userId }
+      });
+      socket.to(`channel_${channelId}`).emit('message-read', { channelId, messageId, userId });
+    } catch (err) {
+      console.error(err);
+    }
   });
 
   socket.on('disconnect', () => {
