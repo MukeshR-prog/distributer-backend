@@ -38,6 +38,8 @@ const agentAnalyticsRoutes = require('./routes/agentAnalytics');
 const agentAIRoutes = require('./routes/agentAI');
 const gamificationRoutes = require('./routes/gamification');
 const collaborationRoutes = require('./routes/collaboration');
+const discussionsRoutes = require('./routes/discussions');
+const knowledgeRoutes = require('./routes/knowledge');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -152,6 +154,8 @@ app.use('/api/agent-workspace', agentAnalyticsRoutes);
 app.use('/api/agent-ai', agentAIRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/collaboration', collaborationRoutes);
+app.use('/api/discussions', discussionsRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
