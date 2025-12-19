@@ -40,6 +40,8 @@ const gamificationRoutes = require('./routes/gamification');
 const collaborationRoutes = require('./routes/collaboration');
 const discussionsRoutes = require('./routes/discussions');
 const knowledgeRoutes = require('./routes/knowledge');
+const announcementsRoutes = require('./routes/announcements');
+const presenceRoutes = require('./routes/presence');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -156,6 +158,8 @@ app.use('/api/gamification', gamificationRoutes);
 app.use('/api/collaboration', collaborationRoutes);
 app.use('/api/discussions', discussionsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/announcements', announcementsRoutes);
+app.use('/api/presence', presenceRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -178,11 +182,35 @@ io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
 
   // Join user to their role-based room
-  socket.on('join', (data) => {
+  socket.on('join', async (data) => {
     const { userId, role } = data;
+    socket.userId = userId;
+    socket.role = role;
     socket.join(`${role}_${userId}`);
     socket.join(role); // Join role-based room
     console.log(`👤 User ${userId} joined ${role} room`);
+
+    // Set status to online upon joining
+    if (role === 'agent') {
+      try {
+        const User = require('./models/User');
+        const user = await User.findByIdAndUpdate(userId, {
+          presenceStatus: 'online',
+          lastSeen: new Date()
+        }, { new: true });
+        if (user) {
+          io.emit('presence-update', {
+            userId: user._id,
+            name: user.name,
+            presenceStatus: 'online',
+            lastSeen: user.lastSeen,
+            activeWorkspace: user.activeWorkspace
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
   });
 
   // Handle real-time updates
@@ -245,8 +273,52 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  // Presence listeners
+  socket.on('presence-change', async (data) => {
+    const { userId, status, activeWorkspace } = data;
+    try {
+      const User = require('./models/User');
+      const updateData = { lastSeen: new Date() };
+      if (status) updateData.presenceStatus = status;
+      if (activeWorkspace !== undefined) updateData.activeWorkspace = activeWorkspace;
+
+      const user = await User.findByIdAndUpdate(userId, updateData, { new: true });
+      if (user) {
+        io.emit('presence-update', {
+          userId: user._id,
+          name: user.name,
+          presenceStatus: user.presenceStatus,
+          lastSeen: user.lastSeen,
+          activeWorkspace: user.activeWorkspace
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  socket.on('disconnect', async () => {
     console.log(`🔌 User disconnected: ${socket.id}`);
+    if (socket.userId && socket.role === 'agent') {
+      try {
+        const User = require('./models/User');
+        const user = await User.findByIdAndUpdate(socket.userId, {
+          presenceStatus: 'offline',
+          lastSeen: new Date()
+        }, { new: true });
+        if (user) {
+          io.emit('presence-update', {
+            userId: user._id,
+            name: user.name,
+            presenceStatus: 'offline',
+            lastSeen: user.lastSeen,
+            activeWorkspace: user.activeWorkspace
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
   });
 });
 

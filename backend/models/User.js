@@ -134,6 +134,19 @@ const userSchema = new mongoose.Schema({
   selectedTheme: {
     type: String,
     default: ""
+  },
+  presenceStatus: {
+    type: String,
+    enum: ['online', 'away', 'busy', 'offline'],
+    default: 'offline'
+  },
+  lastSeen: {
+    type: Date,
+    default: Date.now
+  },
+  activeWorkspace: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true,
