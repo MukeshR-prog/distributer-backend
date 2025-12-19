@@ -201,3 +201,89 @@ graph TD
   - **Role**: Model tracking completed redemption logs.
 - **Path**: [rewardEngine.js](file:///d:/mern/distributer/backend/services/rewardEngine.js) [NEW]
   - **Role**: Seeds the rewards catalog, validates balances, records redemptions, and manages equipped title/theme overrides in agent user profiles.
+
+---
+
+## 19. Agent Collaboration & Communication Hub
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Server["server.js"]:::modFile
+    CollabRoute["routes/collaboration.js"]:::newFile
+    DiscRoute["routes/discussions.js"]:::newFile
+    KnowRoute["routes/knowledge.js"]:::newFile
+    AnnounceRoute["routes/announcements.js"]:::newFile
+    PresRoute["routes/presence.js"]:::newFile
+
+    Page["app/agent/dashboard/page.js"]:::modFile
+    Hub["components/collaboration/CollaborationHub.jsx"]:::newFile
+    Chat["components/collaboration/ChatWindow.jsx"]:::newFile
+    AnnList["components/collaboration/AnnouncementCenter.jsx"]:::newFile
+    Wiki["components/collaboration/KnowledgeBase.jsx"]:::newFile
+    Roster["components/collaboration/TeamPresencePanel.jsx"]:::newFile
+
+    Server -->|Mounts API & Sockets| CollabRoute
+    Server -->|Mounts API & Sockets| DiscRoute
+    Server -->|Mounts API & Sockets| KnowRoute
+    Server -->|Mounts API & Sockets| AnnounceRoute
+    Server -->|Mounts API & Sockets| PresRoute
+
+    Page -->|Mounts & Feeds socket| Hub
+    Hub -->|Section: Chat| Chat
+    Hub -->|Section: Announcements| AnnList
+    Hub -->|Section: Knowledge SOPs| Wiki
+    Hub -->|Section: Presence Roster| Roster
+```
+
+### Backend Models & Schemas
+- **Path**: [TeamChannel.js](file:///d:/mern/distributer/backend/models/TeamChannel.js) [NEW]
+  - **Role**: Mongoose schema for communication channels (General, Team-specific, and Department-specific).
+- **Path**: [ChannelMessage.js](file:///d:/mern/distributer/backend/models/ChannelMessage.js) [NEW]
+  - **Role**: Schema storing chat messages, including sender, reactions, mentions, attachments, and read receipts logs.
+- **Path**: [TaskDiscussion.js](file:///d:/mern/distributer/backend/models/TaskDiscussion.js) [NEW]
+  - **Role**: Schema managing task-threaded discussion comments, resolution statuses, and replies.
+- **Path**: [SharedNote.js](file:///d:/mern/distributer/backend/models/SharedNote.js) [NEW]
+  - **Role**: Schema storing collaborative wiki catalog notes and articles.
+- **Path**: [Announcement.js](file:///d:/mern/distributer/backend/models/Announcement.js) [NEW]
+  - **Role**: Schema managing priority scope-targeted administrative notices.
+
+### Backend Routes & Sockets
+- **Path**: [collaboration.js](file:///d:/mern/distributer/backend/routes/collaboration.js) [NEW]
+  - **Role**: Implements channels roster querying and message history retrievals. Dynamic channel seeding hooks.
+- **Path**: [discussions.js](file:///d:/mern/distributer/backend/routes/discussions.js) [NEW]
+  - **Role**: Handles comments fetching and resolution toggle triggers for task records.
+- **Path**: [knowledge.js](file:///d:/mern/distributer/backend/routes/knowledge.js) [NEW]
+  - **Role**: Manages shared documents CRUD and tag querying.
+- **Path**: [announcements.js](file:///d:/mern/distributer/backend/routes/announcements.js) [NEW]
+  - **Role**: Exposes scope-matched announcements feeds.
+- **Path**: [presence.js](file:///d:/mern/distributer/backend/routes/presence.js) [NEW]
+  - **Role**: Retrieves real-time presence roster.
+- **Path**: [server.js](file:///d:/mern/distributer/backend/server.js) [MODIFY]
+  - **Role**: Hosts Socket.IO server, mounts API routers, and listens/broadcasts events (`join`, `join-channel`, `send-message`, `typing`, `presence-change`, `disconnect`).
+
+### Frontend Components
+- **Path**: [CollaborationHub.jsx](file:///d:/mern/distributer/client/src/components/collaboration/CollaborationHub.jsx) [NEW]
+  - **Role**: Split-pane layout housing Chat, Announcements, Wiki Knowledge Base, and Presence tab panels.
+- **Path**: [ChatWindow.jsx](file:///d:/mern/distributer/client/src/components/collaboration/ChatWindow.jsx) [NEW]
+  - **Role**: Handles active channel stream rendering, message send events, typing indicators, and message edits/deletions.
+- **Path**: [MessageBubble.jsx](file:///d:/mern/distributer/client/src/components/collaboration/MessageBubble.jsx) [NEW]
+  - **Role**: Custom glassmorphic message card with avatars, equipped titles, reactions, and timestamp indicators.
+- **Path**: [TypingIndicator.jsx](file:///d:/mern/distributer/client/src/components/collaboration/TypingIndicator.jsx) [NEW]
+  - **Role**: Pulsing loading dots indicating which users are typing.
+- **Path**: [TeamPresencePanel.jsx](file:///d:/mern/distributer/client/src/components/collaboration/TeamPresencePanel.jsx) [NEW]
+  - **Role**: Lists current agents' live status, last seen values, and active console views.
+- **Path**: [PresenceBadge.jsx](file:///d:/mern/distributer/client/src/components/collaboration/PresenceBadge.jsx) [NEW]
+  - **Role**: Renders status dots/badges by status criteria.
+- **Path**: [AnnouncementCenter.jsx](file:///d:/mern/distributer/client/src/components/collaboration/AnnouncementCenter.jsx) [NEW]
+  - **Role**: Renders priority alerts, warning announcements, and mark-as-read updates.
+- **Path**: [KnowledgeBase.jsx](file:///d:/mern/distributer/client/src/components/collaboration/KnowledgeBase.jsx) [NEW]
+  - **Role**: Shared SOP wiki library catalog with interactive creation templates.
+- **Path**: [SharedNotesBoard.jsx](file:///d:/mern/distributer/client/src/components/collaboration/SharedNotesBoard.jsx) [NEW]
+  - **Role**: Grid display overview for note cards.
+- **Path**: [TaskDiscussionPanel.jsx](file:///d:/mern/distributer/client/src/components/collaboration/TaskDiscussionPanel.jsx) [NEW]
+  - **Role**: Renders side-drawer comments thread for task sheets.
+- **Path**: [page.js](file:///d:/mern/distributer/client/src/app/agent/dashboard/page.js) [MODIFY]
+  - **Role**: Agent dashboard core setup hosting socket.io, tracking active tab focus changes, and mounting `<CollaborationHub>`.

@@ -224,3 +224,38 @@ Achievement events trigger log entry records in the administrative database and 
 - `STREAK_CREATED`: Tracks active streak expansion.
 - Audits are pushed live to the CommandCenter's War Room feed and NotificationCenter via WebSocket emissions.
 
+---
+
+## 12. Agent Collaboration & Communication Hub
+
+The **Agent Collaboration & Communication Hub** transforms the individual agent interface into a collaborative, real-time community hub, introducing Team Channels, Task Discussions, Shared Wikis, User Presence, and Team Announcements.
+
+### Real-Time Sockets Channels & Messaging Engine
+To support real-time chat without page reloads, a central Socket.IO setup is mounted in `server.js` and shared by the frontend dashboard.
+- **Dynamic Seeding**: When an agent accesses channels, the system automatically checks for and seeds default communication channels (`General`, `Team <Name>`, `Department <Name>`) if they do not exist.
+- **Socket Pipes**:
+  - `join-channel` / `leave-channel`: Subscribes/unsubscribes client sockets to channel-specific rooms (`channel_<Id>`).
+  - `send-message` / `edit-message` / `delete-message`: Transmits and broadcasts message additions, modifications, and deletions in real-time to active subscribers.
+  - `typing` / `stop-typing`: Broadcasts typing animations when other agents type.
+  - `message-read`: Updates message read receipts collection (`readBy` array) in MongoDB, broadcasting read status updates.
+
+### Threaded Task Discussions & Resolution
+- **Thread Schema**: `TaskDiscussion` stores comments, resolution statuses (`isResolved`, `resolvedBy`, `resolvedAt`), and nested replies for specific distribution record documents.
+- **Feature**: Enables agents to converse within the scope of a task sheet, assign resolved statuses, and query active thread statuses dynamically.
+
+### Collaborative Wiki Knowledge Base
+- **SOP Storage**: The `SharedNote` collection persists titles, content tags, and categories of operational SOP articles created by agents.
+- **Index Optimization**: Built-in regex indexing allows for full-text search matching across titles, categories, content body, and tags.
+
+### User Presence Roster & Workspace Sync
+- **Status Persistence**: The `User` model stores `presenceStatus` (`online`, `away`, `busy`, `offline`), `lastSeen` times, and `activeWorkspace` paths.
+- **Connection Handlers**:
+  - Upon Socket connection, the user is marked `online`, and a `presence-update` event is broadcast globally.
+  - Upon active tab focus change, a `presence-change` event updates the user's `activeWorkspace` string (e.g., "Collaboration Hub", "Task Queue").
+  - Upon Socket disconnect, the user is automatically marked `offline` with updated `lastSeen` values, broadcasting updates to all other agents.
+
+### Scope-Restricted Announcement Feeds
+- **Notice Management**: The `Announcement` collection stores low, medium, high, and critical bulletins targeting specific user groups (`global`, `team`, or `department`).
+- **Feature**: Automatically filters notices based on the logged-in agent's attributes and tracks read receipts via `readBy` user ID arrays.
+
+
