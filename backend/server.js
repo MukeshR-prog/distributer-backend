@@ -42,6 +42,7 @@ const discussionsRoutes = require('./routes/discussions');
 const knowledgeRoutes = require('./routes/knowledge');
 const announcementsRoutes = require('./routes/announcements');
 const presenceRoutes = require('./routes/presence');
+const agentCopilotRoutes = require('./routes/agentCopilot');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -160,6 +161,7 @@ app.use('/api/discussions', discussionsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/announcements', announcementsRoutes);
 app.use('/api/presence', presenceRoutes);
+app.use('/api/agent-copilot', agentCopilotRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
