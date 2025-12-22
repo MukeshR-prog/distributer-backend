@@ -287,3 +287,82 @@ graph TD
   - **Role**: Renders side-drawer comments thread for task sheets.
 - **Path**: [page.js](file:///d:/mern/distributer/client/src/app/agent/dashboard/page.js) [MODIFY]
   - **Role**: Agent dashboard core setup hosting socket.io, tracking active tab focus changes, and mounting `<CollaborationHub>`.
+
+---
+
+## 20. Agent AI Copilot & Smart Task Assistant
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Server["server.js"]:::modFile
+    CopRoute["routes/agentCopilot.js"]:::newFile
+    CopController["controllers/agentCopilotController.js"]:::newFile
+    CopEngine["services/agentCopilotEngine.js"]:::newFile
+    CopPrompts["prompts/agentCopilotPrompts.js"]:::newFile
+
+    Page["app/agent/dashboard/page.js"]:::modFile
+    Workspace["components/copilot/CopilotWorkspace.jsx"]:::newFile
+    Sidebar["components/copilot/CopilotSidebar.jsx"]:::newFile
+    Chat["components/copilot/CopilotChat.jsx"]:::newFile
+    Snapshot["components/copilot/ProductivitySnapshot.jsx"]:::newFile
+    Focus["components/copilot/DailyFocusPanel.jsx"]:::newFile
+    Recs["components/copilot/SmartRecommendations.jsx"]:::newFile
+    Board["components/copilot/TaskPriorityBoard.jsx"]:::newFile
+
+    Server -->|Mounts API| CopRoute
+    CopRoute -->|Invokes Handler| CopController
+    CopController -->|Coordinates LLM & Rules| CopEngine
+    CopEngine -->|Reads prompts| CopPrompts
+
+    Page -->|Mounts Workspace Tab| Workspace
+    Workspace -->|Tab Layout: Sidebar| Sidebar
+    Workspace -->|Tab Layout: Chat| Chat
+    Workspace -->|Tab Layout: Focus| Focus
+    Workspace -->|Tab Layout: Recommendations| Recs
+    Workspace -->|Tab Layout: Priority Board| Board
+    Workspace -->|Tab Layout: Snapshot| Snapshot
+```
+
+### Backend Models & Schemas
+- **Path**: [AgentCopilotPreference.js](file:///d:/mern/distributer/backend/models/AgentCopilotPreference.js) [NEW]
+  - **Role**: Stores agent working preferences and coaching memory tags for personalizing LLM suggestions.
+- **Path**: [AgentCopilotSession.js](file:///d:/mern/distributer/backend/models/AgentCopilotSession.js) [NEW]
+  - **Role**: Stores chat threads history, conversation titles, and message subdocuments.
+- **Path**: [ActivityLog.js](file:///d:/mern/distributer/backend/models/ActivityLog.js) [MODIFY]
+  - **Role**: Registered `COPILOT_CHAT_CREATED`, `COPILOT_RECOMMENDATION_USED`, `COPILOT_SUMMARY_GENERATED`, and `COPILOT_FOLLOWUP_GENERATED` enums to track engagement metrics.
+
+### Backend Routes & Sockets
+- **Path**: [agentCopilot.js](file:///d:/mern/distributer/backend/routes/agentCopilot.js) [NEW]
+  - **Role**: Implements endpoints mapping summaries, chat, history threads, follow-up templates, and toggle/pin actions.
+- **Path**: [agentCopilotController.js](file:///d:/mern/distributer/backend/controllers/agentCopilotController.js) [NEW]
+  - **Role**: Coordinates route parameters, handles thread deletion/renaming, and fires live activity logging.
+- **Path**: [agentCopilotEngine.js](file:///d:/mern/distributer/backend/services/agentCopilotEngine.js) [NEW]
+  - **Role**: Computes risk parameters, applies a 15-minute memory cache, deduplicates concurrent requests, trims contexts, and calls Groq with robust rule-based local backup routines.
+- **Path**: [agentCopilotPrompts.js](file:///d:/mern/distributer/backend/prompts/agentCopilotPrompts.js) [NEW]
+  - **Role**: Structural prompt text library forcing Groq to output strict JSON schemas.
+
+### Frontend Components
+- **Path**: [CopilotWorkspace.jsx](file:///d:/mern/distributer/client/src/components/copilot/CopilotWorkspace.jsx) [NEW]
+  - **Role**: Split-screen dashboard workspace connecting sidebar threads, chat feed, recommendations, priorities, and stats snapshot widget.
+- **Path**: [CopilotSidebar.jsx](file:///d:/mern/distributer/client/src/components/copilot/CopilotSidebar.jsx) [NEW]
+  - **Role**: Conversation list control supporting inline renaming, pin toggle sorting, search filtering, and thread deletions.
+- **Path**: [CopilotChat.jsx](file:///d:/mern/distributer/client/src/components/copilot/CopilotChat.jsx) [NEW]
+  - **Role**: Conversational bubble log with suggested prompt pills and access to PromptLibrary drawer.
+- **Path**: [ChatMessage.jsx](file:///d:/mern/distributer/client/src/components/copilot/ChatMessage.jsx) [NEW]
+  - **Role**: Renders individual chat message balloons with copy-to-clipboard actions.
+- **Path**: [TypingIndicator.jsx](file:///d:/mern/distributer/client/src/components/copilot/TypingIndicator.jsx) [NEW]
+  - **Role**: Pulsing animated loading bubbles.
+- **Path**: [PromptLibrary.jsx](file:///d:/mern/distributer/client/src/components/copilot/PromptLibrary.jsx) [NEW]
+  - **Role**: Grouped prompt helper templates supporting search and favorite logs.
+- **Path**: [DailyFocusPanel.jsx](file:///d:/mern/distributer/client/src/components/copilot/DailyFocusPanel.jsx) [NEW]
+  - **Role**: Renders daily summary, highlights, and target objectives.
+- **Path**: [SmartRecommendations.jsx](file:///d:/mern/distributer/client/src/components/copilot/SmartRecommendations.jsx) [NEW]
+  - **Role**: Lists executable task recommendations deep-linked with open/status update routes and follow-up templates generation.
+- **Path**: [TaskPriorityBoard.jsx](file:///d:/mern/distributer/client/src/components/copilot/TaskPriorityBoard.jsx) [NEW]
+  - **Role**: Risk board grid ordering tasks into Overdue, Due Today, and High Risk columns.
+- **Path**: [ProductivitySnapshot.jsx](file:///d:/mern/distributer/client/src/components/copilot/ProductivitySnapshot.jsx) [NEW]
+  - **Role**: Aggregates points, streaks, level, and scores from analytics and gamification.
+

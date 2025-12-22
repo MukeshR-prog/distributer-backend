@@ -258,4 +258,38 @@ To support real-time chat without page reloads, a central Socket.IO setup is mou
 - **Notice Management**: The `Announcement` collection stores low, medium, high, and critical bulletins targeting specific user groups (`global`, `team`, or `department`).
 - **Feature**: Automatically filters notices based on the logged-in agent's attributes and tracks read receipts via `readBy` user ID arrays.
 
+---
+
+## 13. Agent AI Copilot & Smart Task Assistant
+
+The **Agent AI Copilot & Smart Task Assistant** integrates a personalized AI assistant into the agent console, offering natural language support, risk-based prioritization columns, executable action links, follow-up generators, and local fallback engines.
+
+### Chat Assistant & Conversation Lifecycle
+- **Conversation State**: The `AgentCopilotSession` model stores chat thread lists. Pinned conversations are indexed to rank at the top of the list.
+- **Operations**:
+  - `rename`: Updates conversation titles dynamically.
+  - `pin` / `unpin`: Toggles pinning flags.
+  - `delete`: Removes session history.
+- **Context Trimming & Token Protection**: The chat service dynamically trims prompt logs, keeping only the most recent messages to protect API limits and optimize latency.
+- **Personalization Memory**: The `AgentCopilotPreference` model stores agent preferences (preferred hours, tasks, common coaching gaps) which are injected directly into the LLM system prompts.
+
+### Smart Planner Recommendations & Risk Board
+- **Prioritization Model**: Sorts active task records into High Risk, Due Today, and Overdue columns.
+- **Actionable Execution Links**: Recommendations are deep-linked:
+  - `Open`: Triggers tab switching and search filters for the specific record name.
+  - `Start`: Triggers real-time task status updates.
+  - `Follow-Up`: Invokes the AI follow-up generator.
+
+### AI Follow-up & Communication Templates
+- **Template Generation**: The `/api/agent-copilot/followup/:recordId` endpoint leverages Groq to synthesize scripts tailored for Email, Call scripts, WhatsApp messages, Meeting Invites, and Escalations based on specific record fields.
+- **Local Fallback Rules**: If the LLM is unreachable, the engine falls back to local regex/template scripts to ensure continuous offline availability.
+
+### Backend Performance Optimization
+- **15-minute Caching Layer**: In-memory caching for summaries and recommendations queries reduces MongoDB processing overhead.
+- **In-flight Deduplication**: Deduplicates concurrent duplicate requests, queuing requests into a single promise cache.
+
+### Activity Logging & Auditing
+- logs `COPILOT_CHAT_CREATED`, `COPILOT_RECOMMENDATION_USED`, `COPILOT_SUMMARY_GENERATED`, and `COPILOT_FOLLOWUP_GENERATED` to feed live alerts to the CommandCenter's War Room feed and NotificationCenter via Socket.IO.
+
+
 
