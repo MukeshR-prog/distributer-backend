@@ -291,5 +291,46 @@ The **Agent AI Copilot & Smart Task Assistant** integrates a personalized AI ass
 ### Activity Logging & Auditing
 - logs `COPILOT_CHAT_CREATED`, `COPILOT_RECOMMENDATION_USED`, `COPILOT_SUMMARY_GENERATED`, and `COPILOT_FOLLOWUP_GENERATED` to feed live alerts to the CommandCenter's War Room feed and NotificationCenter via Socket.IO.
 
+---
+
+## 14. Agent Learning Center & Career Growth Platform
+
+The **Agent Learning Center & Career Growth Platform** establishes a comprehensive skill progression, verification licensing, and career tracking hub in the agent portal.
+
+### Automatic Seeding & Syllabus Content
+Upon database startup or first user access, the system checks for and creates default training courses in the database:
+1. **Customer Communication** (Difficulty: Easy, Tag: Communication): Focuses on active listening and empathetic rapport. Includes a 2-question multiple-choice quiz.
+2. **Task Management** (Difficulty: Easy, Tag: Operations): Teaches workload queue prioritization rules.
+3. **SLA Excellence** (Difficulty: Medium, Tag: SLA): Explains breach avoidance thresholds and deadline tracking.
+4. **Leadership Skills** (Difficulty: Hard, Tag: Management): Guides lead agents in operational coaching and mentoring.
+5. **Productivity Optimization** (Difficulty: Medium, Tag: Productivity): Covers streak habits and daily consistency.
+6. **AI Assisted Operations** (Difficulty: Medium, Tag: AI): Focuses on using the AI Copilot templates.
+
+### Quiz Grading & Auto-Certification Logic
+When an agent submits answers to a module quiz (`POST /api/learning/progress`), the system:
+- Scores the responses against the correct answer keys in the database.
+- If the score is $\ge 80\%$, the progress is updated to $100\%$ completion (`completedAt` is stored).
+- If the score is $< 80\%$, the progress is updated to $50\%$ (started but failed).
+- Upon reaching $100\%$ completion across all modules in a syllabus path, the system checks if a certification has already been issued:
+  - If not, it creates a `Certification` record with a unique license code formatted as `CERT-<NORMALIZED-PATH-NAME>-<RANDOM-HEX>`.
+  - Awards a `+500 XP` and `+250 Points` payout to the user, checks for level up boundaries, logs a `CERTIFICATION_EARNED` activity, and emits real-time WebSocket events.
+
+### Career Progression & Tiers Evaluation
+An agent's Career Tier is dynamically evaluated based on completed paths, user experience level, and productivity scores:
+- **Associate Agent**: Baseline onboarding starter tier.
+- **Professional Agent**: Completed $\ge 1$ Path and Productivity $\ge 75$.
+- **Senior Agent**: Completed $\ge 2$ Paths and Productivity $\ge 80$.
+- **Lead Agent**: Completed $\ge 3$ Paths, User Level $\ge 5$, and Productivity $\ge 85$.
+- **Operations Specialist**: Completed $\ge 4$ Paths, User Level $\ge 10$, and Productivity $\ge 90$.
+- **Operations Expert**: Completed $\ge 6$ Paths, User Level $\ge 15$, and Productivity $\ge 95$.
+
+### Composite Growth Index & Skill Score
+- **Skill Score**: Percentage of available learning paths completed:
+  $$SkillScore = \frac{CompletedPaths}{TotalPaths} \times 100$$
+- **Learning Velocity**: Percentage of available paths completed in the last 30 days.
+- **Growth Index**: Composite metric summarizing overall progress:
+  $$GrowthIndex = (SkillScore \times 0.3) + (StreakFactor \times 0.2) + (LevelFactor \times 0.2) + (ProductivityScore \times 0.3)$$
+  Where $StreakFactor = \min(100, currentStreak \times 10)$ and $LevelFactor = \min(100, level \times 5)$.
+
 
 

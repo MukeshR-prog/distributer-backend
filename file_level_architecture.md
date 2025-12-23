@@ -366,3 +366,67 @@ graph TD
 - **Path**: [ProductivitySnapshot.jsx](file:///d:/mern/distributer/client/src/components/copilot/ProductivitySnapshot.jsx) [NEW]
   - **Role**: Aggregates points, streaks, level, and scores from analytics and gamification.
 
+---
+
+## 10. Agent Learning Center & Career Growth Platform
+
+This section maps the structural learning modules, certification checks, dynamic career progression logic, and dashboards.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Server["server.js"]:::modFile
+    LearnRoute["routes/learning.js"]:::newFile
+    LearnController["controllers/learningController.js"]:::newFile
+    CareerEngine["services/careerGrowthEngine.js"]:::newFile
+
+    Page["app/agent/dashboard/page.js"]:::modFile
+    Dashboard["components/learning/LearningDashboard.jsx"]:::newFile
+    ProgressCard["components/learning/LearningProgressCard.jsx"]:::newFile
+    PathCard["components/learning/LearningPathCard.jsx"]:::newFile
+    CertCard["components/learning/CertificationCard.jsx"]:::newFile
+    CareerPanel["components/learning/CareerGrowthPanel.jsx"]:::newFile
+
+    Server -->|Mounts API| LearnRoute
+    LearnRoute -->|Invokes Handler| LearnController
+    LearnController -->|Grades & Certifies| CareerEngine
+
+    Page -->|Mounts Workspace Tab| Dashboard
+    Dashboard -->|Radial Progress| ProgressCard
+    Dashboard -->|Course Selector| PathCard
+    Dashboard -->|Renders License| CertCard
+    Dashboard -->|Tier Timeline| CareerPanel
+```
+
+### Backend Models & Schemas
+- **Path**: [LearningPath.js](file:///d:/mern/distributer/backend/models/LearningPath.js) [NEW]
+  - **Role**: Stores default syllabus path configuration (Customer Communication, Task Management, SLA Excellence, Leadership, Productivity, AI Assisted Operations).
+- **Path**: [LearningModule.js](file:///d:/mern/distributer/backend/models/LearningModule.js) [NEW]
+  - **Role**: Stores specific modules, content text, order, and multiple-choice quiz questions.
+- **Path**: [AgentLearningProgress.js](file:///d:/mern/distributer/backend/models/AgentLearningProgress.js) [NEW]
+  - **Role**: Tracks module completion percentages, completed times, quiz scores, and study time spent.
+- **Path**: [Certification.js](file:///d:/mern/distributer/backend/models/Certification.js) [NEW]
+  - **Role**: Stores issued certificates, passing scores, unique codes, and issue timestamps.
+
+### Backend Routes & Services
+- **Path**: [learning.js](file:///d:/mern/distributer/backend/routes/learning.js) [NEW]
+  - **Role**: Registers protected routes for paths, modules, progress submit, and career stats.
+- **Path**: [learningController.js](file:///d:/mern/distributer/backend/controllers/learningController.js) [NEW]
+  - **Role**: Coordinates seeding default paths, loads module details, evaluates quiz checkpoints, and aggregates statistics.
+- **Path**: [careerGrowthEngine.js](file:///d:/mern/distributer/backend/services/careerGrowthEngine.js) [NEW]
+  - **Role**: Computes Skill Score (completed paths ratio), Learning Velocity (30 days completed paths ratio), Career Tier criteria rules (Associate to Expert), Growth Index (composite metric), and auto-issues certifications with XP/points payouts.
+
+### Frontend Components
+- **Path**: [LearningDashboard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningDashboard.jsx) [NEW]
+  - **Role**: Integrated panel holding active courses, radial progress overviews, quiz inputs, certified printouts, and career timelines.
+- **Path**: [LearningPathCard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningPathCard.jsx) [NEW]
+  - **Role**: Render card summaries with difficulty badges and completion bar indicators.
+- **Path**: [LearningProgressCard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningProgressCard.jsx) [NEW]
+  - **Role**: Summary stats dashboard containing inline radial SVG progress rings for active paths.
+- **Path**: [CertificationCard.jsx](file:///d:/mern/distributer/client/src/components/learning/CertificationCard.jsx) [NEW]
+  - **Role**: Premium verified glassmorphic certificate frame presenting license verification stamps.
+- **Path**: [CareerGrowthPanel.jsx](file:///d:/mern/distributer/client/src/components/learning/CareerGrowthPanel.jsx) [NEW]
+  - **Role**: Horizontal milestone path mapping Associate Agent up to Operations Expert status.
+
