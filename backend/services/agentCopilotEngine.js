@@ -5,6 +5,7 @@ const AgentCopilotSession = require('../models/AgentCopilotSession');
 const AgentCoachingSnapshot = require('../models/AgentCoachingSnapshot');
 const AgentAchievement = require('../models/AgentAchievement');
 const Achievement = require('../models/Achievement');
+const Certification = require('../models/Certification');
 const { callGroq } = require('./groqService');
 const { logActivity } = require('../utils/activityLogger');
 const {
@@ -301,6 +302,13 @@ const executeCopilotChat = async (agentId, sessionId, userMessage, io = null) =>
   const metrics = await getAgentMetricsContext(agentId);
   const coaching = await AgentCoachingSnapshot.findOne({ agentId }).sort({ generatedAt: -1 });
 
+  // Fetch career stats and development plans to personalize Copilot answers
+  const { calculateAgentCareerStats } = require('./careerGrowthEngine');
+  const DevelopmentPlan = require('../models/DevelopmentPlan');
+  const careerStats = await calculateAgentCareerStats(agentId);
+  const activePlan = await DevelopmentPlan.findOne({ agentId, status: 'active' });
+  const certs = await Certification.find({ agentId });
+
   // Get trimmed history
   const trimmed = trimMessagesContext(session.messages);
 
@@ -310,6 +318,8 @@ const executeCopilotChat = async (agentId, sessionId, userMessage, io = null) =>
 Preferences: ${JSON.stringify(preferences)}
 Metrics: ${JSON.stringify(metrics)}
 Coaching insights: ${coaching ? JSON.stringify({ strengths: coaching.strengths, weaknesses: coaching.weaknesses }) : "None"}
+Career Progression Stats: ${JSON.stringify(careerStats)}
+Development Plan: ${activePlan ? JSON.stringify(activePlan) : "None"}
 Conversation History: ${JSON.stringify(trimmed)}
 New user message: ${userMessage}`;
 
@@ -321,7 +331,22 @@ New user message: ${userMessage}`;
     }
   } catch (err) {
     console.error('[CopilotEngine] Chat assistant AI failed:', err.message);
-    assistantContent = `I am currently operating in offline mode. Let me suggest next steps: based on your queue, you have ${metrics.pending} pending tasks. Try addressing any critical or overdue items first, and let me know if you need specific template scripts.`;
+    
+    // Context-aware fallback answers for common questions
+    const msgLower = userMessage.toLowerCase();
+    if (msgLower.includes("become") || msgLower.includes("senior") || msgLower.includes("tier") || msgLower.includes("level")) {
+      assistantContent = `To progress from your current tier (${careerStats.careerLevel || "Associate Agent"}) to the next tier, you must complete the required syllabus paths (you currently have ${certs.length} certifications) and maintain your productivity score above the next tier's threshold. You can check the detailed checklist in the "Career Tier" tab inside your Learning & Growth dashboard.`;
+    } else if (msgLower.includes("learn") || msgLower.includes("what should i")) {
+      const recCourse = activePlan?.recommendedCourses?.[0] || "Customer Communication";
+      assistantContent = `Based on your recent metrics and coach coaching feedbacks, you should focus on learning the "${recCourse}" path. It will help bridge your active skill gaps.`;
+    } else if (msgLower.includes("missing") || msgLower.includes("skills") || msgLower.includes("gaps")) {
+      const gaps = activePlan?.skillGaps?.join(", ") || "SLA compliance consistency";
+      assistantContent = `According to your development plan, your main skill gaps are: ${gaps}. Focusing on these target areas will help boost your career level.`;
+    } else if (msgLower.includes("rank") || msgLower.includes("improve")) {
+      assistantContent = `To improve your rank, focus on maintaining a high completion rate, keeping SLA compliance above 90%, and maintaining active consecutive task resolution streaks.`;
+    } else {
+      assistantContent = `I am currently operating in offline mode. Let me suggest next steps: based on your queue, you have ${metrics.pending} pending tasks. Try addressing any critical or overdue items first, and let me know if you need specific template scripts.`;
+    }
   }
 
   session.messages.push({

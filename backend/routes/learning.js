@@ -4,7 +4,9 @@ const {
   getLearningPaths,
   getLearningModuleDetails,
   recordLearningProgress,
-  getLearningStatistics
+  getLearningStatistics,
+  getDevelopmentPlan,
+  regenerateDevelopmentPlan
 } = require('../controllers/learningController');
 
 const router = express.Router();
@@ -17,5 +19,7 @@ router.get('/paths', getLearningPaths);
 router.get('/modules/:id', getLearningModuleDetails);
 router.post('/progress', recordLearningProgress);
 router.get('/progress', getLearningStatistics);
+router.get('/development-plan', getDevelopmentPlan);
+router.post('/regenerate-plan', regenerateDevelopmentPlan);
 
 module.exports = router;

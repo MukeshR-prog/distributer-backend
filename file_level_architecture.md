@@ -428,5 +428,49 @@ graph TD
 - **Path**: [CertificationCard.jsx](file:///d:/mern/distributer/client/src/components/learning/CertificationCard.jsx) [NEW]
   - **Role**: Premium verified glassmorphic certificate frame presenting license verification stamps.
 - **Path**: [CareerGrowthPanel.jsx](file:///d:/mern/distributer/client/src/components/learning/CareerGrowthPanel.jsx) [NEW]
-  - **Role**: Horizontal milestone path mapping Associate Agent up to Operations Expert status.
+  - **Role**: Horizontal milestone path mapping Associate Agent up to Operations Expert status. Modifies tab navigation to display personalized DevelopmentPlanCard and MilestoneTracker components.
+
+---
+
+## 11. Learning Recommendations & AI Development Planner (Additional Commit 5)
+
+This section maps the structural components added to personalize agent progression via AI-generated plans.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/learningController.js"]:::modFile
+    Planner["services/developmentPlanner.js"]:::newFile
+    Model["models/DevelopmentPlan.js"]:::newFile
+    CopEngine["services/agentCopilotEngine.js"]:::modFile
+
+    Panel["components/learning/CareerGrowthPanel.jsx"]:::modFile
+    PlanCard["components/learning/DevelopmentPlanCard.jsx"]:::newFile
+    Milestone["components/learning/MilestoneTracker.jsx"]:::newFile
+
+    Controller -->|Invokes| Planner
+    Planner -->|Persists Plan| Model
+    CopEngine -->|Injects Context| Model
+
+    Panel -->|Mounts Plan| PlanCard
+    Panel -->|Mounts Roadmap| Milestone
+```
+
+### Backend Models & Services
+- **Path**: [DevelopmentPlan.js](file:///d:/mern/distributer/backend/models/DevelopmentPlan.js) [NEW]
+  - **Role**: Schema storing current level, target level, recommended skills, recommended courses, estimated timeline, strengths, gaps, and weekly milestone subdocuments.
+- **Path**: [developmentPlanner.js](file:///d:/mern/distributer/backend/services/developmentPlanner.js) [NEW]
+  - **Role**: AI-driven development plan generation service querying metrics and invoking Groq API (or fallbacks) to save personalized career plans.
+- **Path**: [learningController.js](file:///d:/mern/distributer/backend/controllers/learningController.js) [MODIFY]
+  - **Role**: Implements `GET /development-plan` and `POST /regenerate-plan` routing handlers.
+- **Path**: [agentCopilotEngine.js](file:///d:/mern/distributer/backend/services/agentCopilotEngine.js) [MODIFY]
+  - **Role**: Injects development plan details and career stats into user chat prompts to answer career advancement questions.
+
+### Frontend Components
+- **Path**: [DevelopmentPlanCard.jsx](file:///d:/mern/distributer/client/src/components/learning/DevelopmentPlanCard.jsx) [NEW]
+  - **Role**: Premium glassmorphic panel presenting strengths, gaps, target courses, and action triggers.
+- **Path**: [MilestoneTracker.jsx](file:///d:/mern/distributer/client/src/components/learning/MilestoneTracker.jsx) [NEW]
+  - **Role**: Action roadmap tracking weekly checkpoints with colored progress indicators.
 

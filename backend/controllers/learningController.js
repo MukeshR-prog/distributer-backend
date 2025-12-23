@@ -420,9 +420,47 @@ const getLearningStatistics = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get/Generate Career Development Plan
+ * @route   GET /api/learning/development-plan
+ * @access  Private (Agent Only)
+ */
+const getDevelopmentPlan = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const io = req.app.get('io');
+
+  const { generateDevelopmentPlan } = require('../services/developmentPlanner');
+  const plan = await generateDevelopmentPlan(agentId, false, io);
+
+  res.status(200).json({
+    success: true,
+    plan
+  });
+});
+
+/**
+ * @desc    Force Regenerate Career Development Plan
+ * @route   POST /api/learning/regenerate-plan
+ * @access  Private (Agent Only)
+ */
+const regenerateDevelopmentPlan = asyncHandler(async (req, res) => {
+  const agentId = req.user._id.toString();
+  const io = req.app.get('io');
+
+  const { generateDevelopmentPlan } = require('../services/developmentPlanner');
+  const plan = await generateDevelopmentPlan(agentId, true, io);
+
+  res.status(200).json({
+    success: true,
+    plan
+  });
+});
+
 module.exports = {
   getLearningPaths,
   getLearningModuleDetails,
   recordLearningProgress,
-  getLearningStatistics
+  getLearningStatistics,
+  getDevelopmentPlan,
+  regenerateDevelopmentPlan
 };

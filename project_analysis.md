@@ -332,5 +332,12 @@ An agent's Career Tier is dynamically evaluated based on completed paths, user e
   $$GrowthIndex = (SkillScore \times 0.3) + (StreakFactor \times 0.2) + (LevelFactor \times 0.2) + (ProductivityScore \times 0.3)$$
   Where $StreakFactor = \min(100, currentStreak \times 10)$ and $LevelFactor = \min(100, level \times 5)$.
 
-
-
+### AI-Driven Development Planner (Commit 5)
+To support personalized agent growth plans, Commit 5 introduces an automated AI planner integration:
+- **Service Layer**: [developmentPlanner.js](file:///d:/mern/distributer/backend/services/developmentPlanner.js) compiles agent metadata (Productivity Score, SLA Compliance, Rank, Achievements, Coaching Snapshots, Active Certifications) and coordinates with the Groq AI service.
+- **Structured Output**: AI generates a schema-compliant 4-week milestones path, mapping current and target levels, strengths, gaps, recommended skills, and course recommendations.
+- **Rule-Based Fallback**: If Groq API or context payload parsing fails, a structured local rules engine generates an offline fallback plan to guarantee system availability.
+- **API Endpoints**:
+  - `GET /api/learning/development-plan`: Returns the active development plan (generates one if none exists).
+  - `POST /api/learning/regenerate-plan`: Forces the generation of a refreshed development plan utilizing the latest performance statistics.
+- **Copilot Integration**: Agent Copilot context is extended to ingest career growth profiles and development plan subdocuments, enabling the assistant to answer questions about career advancement, skill gaps, and course progression offline or online.
