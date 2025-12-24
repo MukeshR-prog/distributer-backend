@@ -474,3 +474,58 @@ graph TD
 - **Path**: [MilestoneTracker.jsx](file:///d:/mern/distributer/client/src/components/learning/MilestoneTracker.jsx) [NEW]
   - **Role**: Action roadmap tracking weekly checkpoints with colored progress indicators.
 
+---
+
+## 12. Career Progression & Promotion Readiness (Commit 6)
+
+This section maps the structural components added to evaluate career tiers, calculate promotion readiness, and present career checklists.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/careerController.js"]:::newFile
+    Engine["services/careerProgressionEngine.js"]:::newFile
+    Model["models/CareerProgressionSnapshot.js"]:::newFile
+    Routes["routes/career.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/career/CareerGrowthDashboard.jsx"]:::newFile
+    Readiness["components/career/PromotionReadinessCard.jsx"]:::newFile
+    Roadmap["components/career/CareerRoadmap.jsx"]:::newFile
+    Checklist["components/career/PromotionChecklist.jsx"]:::newFile
+    Insights["components/career/CareerInsights.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Snapshot| Model
+
+    Dashboard -->|Mounts| Readiness
+    Dashboard -->|Mounts| Roadmap
+    Dashboard -->|Mounts| Checklist
+    Dashboard -->|Mounts| Insights
+```
+
+### Backend Models & Services
+- **Path**: [CareerProgressionSnapshot.js](file:///d:/mern/distributer/backend/models/CareerProgressionSnapshot.js) [NEW]
+  - **Role**: Database schema tracking readiness scores, levels, target tiers, strengths, weaknesses, checklists, and 4-week timelines.
+- **Path**: [careerProgressionEngine.js](file:///d:/mern/distributer/backend/services/careerProgressionEngine.js) [NEW]
+  - **Role**: Operations engine calculating consolidated readiness score using productivity (25%), learning (20%), achievements (15%), collaboration (10%), SLA (15%), and coaching (15%) metrics.
+- **Path**: [careerController.js](file:///d:/mern/distributer/backend/controllers/careerController.js) [NEW]
+  - **Role**: Implements API profile, readiness, roadmap, and force-regenerate actions.
+- **Path**: [career.js](file:///d:/mern/distributer/backend/routes/career.js) [NEW]
+  - **Role**: Routes /api/career requests.
+
+### Frontend Components
+- **Path**: [PromotionReadinessCard.jsx](file:///d:/mern/distributer/client/src/components/career/PromotionReadinessCard.jsx) [NEW]
+  - **Role**: Renders overall promotion readiness percentage using a radial progress circle.
+- **Path**: [CareerRoadmap.jsx](file:///d:/mern/distributer/client/src/components/career/CareerRoadmap.jsx) [NEW]
+  - **Role**: Maps 4-week timeline checkpoints of actionable tasks alongside target skills and courses.
+- **Path**: [PromotionChecklist.jsx](file:///d:/mern/distributer/client/src/components/career/PromotionChecklist.jsx) [NEW]
+  - **Role**: Renders met and pending prerequisite checklists for next tier promotion.
+- **Path**: [CareerInsights.jsx](file:///d:/mern/distributer/client/src/components/career/CareerInsights.jsx) [NEW]
+  - **Role**: Displays positive strengths, development needs, and career goals.
+- **Path**: [CareerGrowthDashboard.jsx](file:///d:/mern/distributer/client/src/components/career/CareerGrowthDashboard.jsx) [NEW]
+  - **Role**: Orchestrates all subcomponent data fetching, manual snapshot regeneration triggers, and layout grid views.
