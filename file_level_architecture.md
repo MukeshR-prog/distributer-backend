@@ -529,3 +529,60 @@ graph TD
   - **Role**: Displays positive strengths, development needs, and career goals.
 - **Path**: [CareerGrowthDashboard.jsx](file:///d:/mern/distributer/client/src/components/career/CareerGrowthDashboard.jsx) [NEW]
   - **Role**: Orchestrates all subcomponent data fetching, manual snapshot regeneration triggers, and layout grid views.
+
+---
+
+## 13. Internal Talent Marketplace & Opportunity Engine (Commit 7)
+
+This section maps the structural components added to manage internal opportunities, rank recommendations, and submit applications.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/talentMarketplaceController.js"]:::newFile
+    Engine["services/talentMarketplaceEngine.js"]:::newFile
+    OppModel["models/Opportunity.js"]:::newFile
+    AppModel["models/OpportunityApplication.js"]:::newFile
+    Routes["routes/talentMarketplace.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/talent/TalentMarketplaceDashboard.jsx"]:::newFile
+    Card["components/talent/OpportunityCard.jsx"]:::newFile
+    Recommended["components/talent/RecommendedOpportunities.jsx"]:::newFile
+    Tracker["components/talent/ApplicationTracker.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Opportunity| OppModel
+    Engine -->|Persists Application| AppModel
+
+    Dashboard -->|Mounts| Card
+    Dashboard -->|Mounts| Recommended
+    Dashboard -->|Mounts| Tracker
+```
+
+### Backend Models & Services
+- **Path**: [Opportunity.js](file:///d:/mern/distributer/backend/models/Opportunity.js) [NEW]
+  - **Role**: Database schema representing projects, assignments, mentorships, and programs.
+- **Path**: [OpportunityApplication.js](file:///d:/mern/distributer/backend/models/OpportunityApplication.js) [NEW]
+  - **Role**: Database schema tracking applications submitted by agents and status reviews.
+- **Path**: [talentMarketplaceEngine.js](file:///d:/mern/distributer/backend/services/talentMarketplaceEngine.js) [NEW]
+  - **Role**: Operations engine running default seedings and evaluating matchmaking percentages based on metrics (Productivity, Readiness, Learning, Achievements, Collab) and certification skills.
+- **Path**: [talentMarketplaceController.js](file:///d:/mern/distributer/backend/controllers/talentMarketplaceController.js) [NEW]
+  - **Role**: Implements endpoints for opportunities, ranked recommendations, applications tracker, and apply triggers.
+- **Path**: [talentMarketplace.js](file:///d:/mern/distributer/backend/routes/talentMarketplace.js) [NEW]
+  - **Role**: Route mapping for /api/talent-marketplace.
+
+### Frontend Components
+- **Path**: [OpportunityCard.jsx](file:///d:/mern/distributer/client/src/components/talent/OpportunityCard.jsx) [NEW]
+  - **Role**: Renders opportunity metadata, categories, rewards, and checklist status indicators.
+- **Path**: [RecommendedOpportunities.jsx](file:///d:/mern/distributer/client/src/components/talent/RecommendedOpportunities.jsx) [NEW]
+  - **Role**: Displays AI matching ranked list of suggestions.
+- **Path**: [ApplicationTracker.jsx](file:///d:/mern/distributer/client/src/components/talent/ApplicationTracker.jsx) [NEW]
+  - **Role**: Status logs table summarizing applied opportunities and reviewer decisions.
+- **Path**: [TalentMarketplaceDashboard.jsx](file:///d:/mern/distributer/client/src/components/talent/TalentMarketplaceDashboard.jsx) [NEW]
+  - **Role**: Orchestrates all subcomponent states, API submissions, sub-tab selection triggers, and grid layouts.
+

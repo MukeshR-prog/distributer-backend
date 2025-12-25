@@ -45,6 +45,7 @@ const presenceRoutes = require('./routes/presence');
 const agentCopilotRoutes = require('./routes/agentCopilot');
 const learningRoutes = require('./routes/learning');
 const careerRoutes = require('./routes/career');
+const talentMarketplaceRoutes = require('./routes/talentMarketplace');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -63,7 +64,10 @@ const io = socketIo(server, {
 app.set('io', io);
 
 // Connect to database
-connectDB();
+connectDB().then(() => {
+  const { seedDefaultOpportunities } = require('./services/talentMarketplaceEngine');
+  seedDefaultOpportunities();
+});
 
 // Security middleware
 app.use(helmet({
@@ -166,6 +170,7 @@ app.use('/api/presence', presenceRoutes);
 app.use('/api/agent-copilot', agentCopilotRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/career', careerRoutes);
+app.use('/api/talent-marketplace', talentMarketplaceRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
