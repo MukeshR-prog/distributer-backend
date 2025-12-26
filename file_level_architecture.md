@@ -586,3 +586,60 @@ graph TD
 - **Path**: [TalentMarketplaceDashboard.jsx](file:///d:/mern/distributer/client/src/components/talent/TalentMarketplaceDashboard.jsx) [NEW]
   - **Role**: Orchestrates all subcomponent states, API submissions, sub-tab selection triggers, and grid layouts.
 
+---
+
+## 14. Succession Planning & Leadership Pipeline Engine (Commit 8)
+
+This section maps the structural components added to manage internal succession plans, identify high-potential candidates, and display ranked leadership pipelines on the admin console.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/successionController.js"]:::newFile
+    Engine["services/successionEngine.js"]:::newFile
+    Model["models/SuccessionCandidate.js"]:::newFile
+    Routes["routes/succession.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/succession/SuccessionDashboard.jsx"]:::newFile
+    ScoreCard["components/succession/LeadershipScoreCard.jsx"]:::newFile
+    Pipeline["components/succession/SuccessionPipeline.jsx"]:::newFile
+    Grid["components/succession/HighPotentialGrid.jsx"]:::newFile
+    DevPlan["components/succession/LeadershipDevelopmentPlan.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Candidate Snapshot| Model
+
+    Dashboard -->|Mounts| ScoreCard
+    Dashboard -->|Mounts| Pipeline
+    Dashboard -->|Mounts| Grid
+    Dashboard -->|Mounts| DevPlan
+```
+
+### Backend Models & Services
+- **Path**: [SuccessionCandidate.js](file:///d:/mern/distributer/backend/models/SuccessionCandidate.js) [NEW]
+  - **Role**: Database schema representing succession planning evaluations, scores, tiers, target roles, strengths, and weaknesses.
+- **Path**: [successionEngine.js](file:///d:/mern/distributer/backend/services/successionEngine.js) [NEW]
+  - **Role**: Operations engine calculating leadership score from metrics (Productivity 20%, Readiness 20%, Learning 15%, Collab 15%, Coaching 10%, Achievements 10%, Level 10%), identifying HiPo, and managing pipelines.
+- **Path**: [successionController.js](file:///d:/mern/distributer/backend/controllers/successionController.js) [NEW]
+  - **Role**: Implements endpoints for dashboard stats, candidates summaries, ranked pipelines, and forced recalculation triggers.
+- **Path**: [succession.js](file:///d:/mern/distributer/backend/routes/succession.js) [NEW]
+  - **Role**: Express route protection mapping endpoints.
+
+### Frontend Components
+- **Path**: [LeadershipScoreCard.jsx](file:///d:/mern/distributer/client/src/components/succession/LeadershipScoreCard.jsx) [NEW]
+  - **Role**: Displays radial SVG leadership score gauge and succession tier tags.
+- **Path**: [SuccessionPipeline.jsx](file:///d:/mern/distributer/client/src/components/succession/SuccessionPipeline.jsx) [NEW]
+  - **Role**: Kanban-style lanes sorting candidates into Team Lead, Mentor, Department, and Operations pipelines.
+- **Path**: [HighPotentialGrid.jsx](file:///d:/mern/distributer/client/src/components/succession/HighPotentialGrid.jsx) [NEW]
+  - **Role**: Card grid rendering key strengths, targets, and scores for HiPo candidates.
+- **Path**: [LeadershipDevelopmentPlan.jsx](file:///d:/mern/distributer/client/src/components/succession/LeadershipDevelopmentPlan.jsx) [NEW]
+  - **Role**: Panel mapping strengths, focus zones, estimated timelines, and developmental action recommendations.
+- **Path**: [SuccessionDashboard.jsx](file:///d:/mern/distributer/client/src/components/succession/SuccessionDashboard.jsx) [NEW]
+  - **Role**: Orchestrates API state loaders, tab navigations, candidate selectors, and layout structures.
+
+

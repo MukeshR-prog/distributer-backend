@@ -402,4 +402,43 @@ When an agent applies for a posting (`POST /api/talent-marketplace/apply/:id`), 
 - Verifies that the agent's current Career Readiness score meets or exceeds the opportunity's `minimumReadinessScore`.
 - If successful, records an `OpportunityApplication` in state `APPLIED` and logs a workspace activity trigger. The status moves through `APPLIED` ➔ `REVIEWING` ➔ `ACCEPTED` / `REJECTED`.
 
+### Succession Planning & Leadership Pipeline Engine (Commit 8)
+
+Commit 8 introduces a Succession Planning Engine that evaluates agents across the organization, determines leadership score indices, classifies candidates into succession tiers, and maintains ranked successor pipelines for key administrative roles.
+
+#### 1. Leadership Score Formula
+The leadership score is computed as a weighted average of performance, capability, growth, and team collaboration:
+$$LeadershipScore = (Productivity \times 0.20) + (Readiness \times 0.20) + (LearningProgress \times 0.15) + (Collaboration \times 0.15) + (CoachingProgress \times 0.10) + (Achievements \times 0.10) + (LevelScore \times 0.10)$$
+
+Where:
+- **Productivity (20% weight)**: Performance efficiency and task volumes.
+- **Readiness (20% weight)**: Career readiness score from the latest `CareerProgressionSnapshot`.
+- **Learning Progress (15% weight)**: Skill completion index from the Learning Center.
+- **Collaboration (15% weight)**: Messages, thread comments, and replies in active discussions.
+- **Coaching Progress (10% weight)**: Completion rate of assigned coaching actions.
+- **Achievements (10% weight)**: Percentage of badges unlocked from the catalog.
+- **Level Score (10% weight)**: Scales the agent's user level relative to standard benchmarks ($\min(level \times 10, 100)$).
+
+#### 2. Succession Tiers Classification
+Candidates are assigned to categories based on their leadership and readiness scores:
+- **Strategic Successor**: Leadership Score $\ge 85$ and Career Readiness $\ge 80$. Immediate successor for critical positions.
+- **High Potential (HiPo)**: Leadership Score $\ge 75$ or Career Readiness $\ge 75$. Focuses on leadership development tracks.
+- **Leadership Ready**: Leadership Score $\ge 60$. Ready to transition into coordination or mentorship.
+- **Emerging Leader**: Leadership Score $\ge 40$. Shows initial potential and participates in baseline leadership paths.
+
+#### 3. Succession Pipeline Channels
+Candidates are routed to specific successor pipelines based on their target transition roles:
+- **Team Lead Pipeline**: Succession target for Team Lead roles.
+- **Mentor Pipeline**: Succession target for Mentor roles.
+- **Department Lead Pipeline**: Succession target for Department Coordinator roles.
+- **Executive Pipeline**: Succession target for Operations Specialist roles.
+
+#### 4. Strategic AI Development Recommendations
+For each candidate, the service integrates with the Groq AI service (with rule-based fallback) to generate:
+- Strengths and development areas.
+- Recommendation reason (e.g., highly recommended as a Future Team Lead Candidate if readiness $> 80$, productivity $> 85$, and collaboration $> 75$).
+- Target readiness dates.
+- Developmental tracks outlining goals for Leadership, Communication, Project Ownership, and Mentorship.
+
+
 

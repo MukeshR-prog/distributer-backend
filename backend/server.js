@@ -46,6 +46,7 @@ const agentCopilotRoutes = require('./routes/agentCopilot');
 const learningRoutes = require('./routes/learning');
 const careerRoutes = require('./routes/career');
 const talentMarketplaceRoutes = require('./routes/talentMarketplace');
+const successionRoutes = require('./routes/succession');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -67,6 +68,8 @@ app.set('io', io);
 connectDB().then(() => {
   const { seedDefaultOpportunities } = require('./services/talentMarketplaceEngine');
   seedDefaultOpportunities();
+  const { identifyHighPotentialEmployees } = require('./services/successionEngine');
+  identifyHighPotentialEmployees(false, null);
 });
 
 // Security middleware
@@ -171,6 +174,7 @@ app.use('/api/agent-copilot', agentCopilotRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/career', careerRoutes);
 app.use('/api/talent-marketplace', talentMarketplaceRoutes);
+app.use('/api/succession', successionRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
