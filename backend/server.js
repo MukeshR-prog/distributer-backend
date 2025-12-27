@@ -47,6 +47,7 @@ const learningRoutes = require('./routes/learning');
 const careerRoutes = require('./routes/career');
 const talentMarketplaceRoutes = require('./routes/talentMarketplace');
 const successionRoutes = require('./routes/succession');
+const simulationRoutes = require('./routes/simulation');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -175,6 +176,7 @@ app.use('/api/learning', learningRoutes);
 app.use('/api/career', careerRoutes);
 app.use('/api/talent-marketplace', talentMarketplaceRoutes);
 app.use('/api/succession', successionRoutes);
+app.use('/api/simulation', simulationRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
