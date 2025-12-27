@@ -640,6 +640,68 @@ graph TD
 - **Path**: [LeadershipDevelopmentPlan.jsx](file:///d:/mern/distributer/client/src/components/succession/LeadershipDevelopmentPlan.jsx) [NEW]
   - **Role**: Panel mapping strengths, focus zones, estimated timelines, and developmental action recommendations.
 - **Path**: [SuccessionDashboard.jsx](file:///d:/mern/distributer/client/src/components/succession/SuccessionDashboard.jsx) [NEW]
-  - **Role**: Orchestrates API state loaders, tab navigations, candidate selectors, and layout structures.
+  - **Role**: Admin console dashboard coordinating candidate data and recalculation updates.
 
+---
 
+## 15. Workforce Digital Twin & Scenario Simulation Engine (Commit 10)
+
+This section maps the structural components added to manage dynamic workforce simulations, digital twin calculations, and strategic recommendation leaderboards in the admin dashboard workspace.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/simulationController.js"]:::newFile
+    Engine["services/workforceSimulationEngine.js"]:::newFile
+    Model["models/SimulationScenario.js"]:::newFile
+    Routes["routes/simulation.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/simulation/SimulationDashboard.jsx"]:::newFile
+    Planner["components/simulation/ScenarioPlanner.jsx"]:::newFile
+    CompareCard["components/simulation/ForecastComparisonCard.jsx"]:::newFile
+    ResultsPanel["components/simulation/SimulationResultsPanel.jsx"]:::newFile
+    HistoryTable["components/simulation/SimulationHistoryTable.jsx"]:::newFile
+    Strategic["components/simulation/StrategicRecommendations.jsx"]:::newFile
+    RankingBoard["components/simulation/ScenarioRankingBoard.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Run Snapshots| Model
+
+    Dashboard -->|Mounts| Planner
+    Dashboard -->|Mounts| CompareCard
+    Dashboard -->|Mounts| ResultsPanel
+    Dashboard -->|Mounts| HistoryTable
+    Dashboard -->|Mounts| Strategic
+    Dashboard -->|Mounts| RankingBoard
+```
+
+### Backend Models & Services
+- **Path**: [SimulationScenario.js](file:///d:/mern/distributer/backend/models/SimulationScenario.js) [NEW]
+  - **Role**: Database model representing simulated operations runs, configurations, forecasted parameters, and classifications.
+- **Path**: [workforceSimulationEngine.js](file:///d:/mern/distributer/backend/services/workforceSimulationEngine.js) [NEW]
+  - **Role**: Backend service containing the logic for SLA, Risk, Capacity, Health, and Suitability index calculations.
+- **Path**: [simulationController.js](file:///d:/mern/distributer/backend/controllers/simulationController.js) [NEW]
+  - **Role**: Controller managing requests for custom simulations, history logs, clearing runs, and strategic scenarios seeding.
+- **Path**: [simulation.js](file:///d:/mern/distributer/backend/routes/simulation.js) [NEW]
+  - **Role**: Express routing configuration restricting endpoints to `admin` scope.
+
+### Frontend Components
+- **Path**: [ScenarioPlanner.jsx](file:///d:/mern/distributer/client/src/components/simulation/ScenarioPlanner.jsx) [NEW]
+  - **Role**: Inputs slider panel for hiring, releasing, automations, reallocations, and team setup names.
+- **Path**: [ForecastComparisonCard.jsx](file:///d:/mern/distributer/client/src/components/simulation/ForecastComparisonCard.jsx) [NEW]
+  - **Role**: Compares baseline operational parameters side-by-side with predicted values.
+- **Path**: [SimulationResultsPanel.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationResultsPanel.jsx) [NEW]
+  - **Role**: Renders suitability ratings and detailed metrics change badges.
+- **Path**: [SimulationHistoryTable.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationHistoryTable.jsx) [NEW]
+  - **Role**: Records and displays past custom simulations ran by administrative leaders.
+- **Path**: [StrategicRecommendations.jsx](file:///d:/mern/distributer/client/src/components/simulation/StrategicRecommendations.jsx) [NEW]
+  - **Role**: Displays cards summarizing Recommended, Best Case, and Worst Case operational profiles.
+- **Path**: [ScenarioRankingBoard.jsx](file:///d:/mern/distributer/client/src/components/simulation/ScenarioRankingBoard.jsx) [NEW]
+  - **Role**: Suitability leaderboard sorting all active strategic and customized plans.
+- **Path**: [SimulationDashboard.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationDashboard.jsx) [NEW]
+  - **Role**: Coordinates data loading, simulator executions, history clearing, and layout grids.

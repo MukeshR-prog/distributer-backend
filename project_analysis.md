@@ -440,5 +440,31 @@ For each candidate, the service integrates with the Groq AI service (with rule-b
 - Target readiness dates.
 - Developmental tracks outlining goals for Leadership, Communication, Project Ownership, and Mentorship.
 
+---
+
+## 15. Workforce Digital Twin & Scenario Simulation Engine
+
+The **Workforce Digital Twin & Scenario Simulation Engine** introduces an advanced operational sandbox where administrative leaders can model staffing, team organization, and process automations to audit metric forecasts.
+
+### Aggregation & Composite Formulas
+The digital twin compiles real-time baseline workforce metrics using active capacity trackers and average agent performance records:
+1. **SLA Compliance Forecast**: Calculates dynamic changes based on hire/release impacts and automation rates:
+   $$\Delta SLA = (addedAgents \times 2.5) + (expandedTeamAgents \times 3.5) - (removedAgents \times 5) + (automationPct \times 0.15) + (reassignedTasks \times 0.3)$$
+2. **Workforce Capacity Projection**: Computes available workload headrooms based on total agent limits:
+   $$WorkforceCapacity = \max\left(0, \min\left(100, 100 - \frac{SimulatedTasks}{SimulatedAgents \times 15} \times 100\right)\right)$$
+3. **Productivity Index Change**: Models load balancing shifts:
+   $$\Delta Productivity = (addedAgents \times 1.5) + (expandedTeamAgents \times 2) - (removedAgents \times 2.5) + (automationPct \times 0.1) + (reassignedTasks \times 0.1)$$
+4. **Operational Health Composite**: Blends multiple forecast vectors:
+   $$OperationalHealth = (SLA \times 0.3) + (Capacity \times 0.3) + (Productivity \times 0.2) + ((100 - Risk) \times 0.2)$$
+5. **Recommendation Suitability Index**: Normalized suitability score (10–100) mapping cost deltas, risk reductions, and SLA changes:
+   $$RecommendationScore = CostImpactScore + SLAImprovementScore + ProductivityScore + RiskReductionScore$$
+
+### Strategic Advisor Classifications
+The calculations engine continuously evaluates and maintains strategic profile templates to serve as comparative baselines:
+- **Best Case: Maximum Operational Resilience**: Modeled with expansion hiring and high automation targets.
+- **Worst Case: Personnel Downsizing**: Modeled with personnel releases and low workload offsets.
+- **Recommended: Balanced Optimization**: Target profile mapping mild staffing growths paired with mid-tier automation offsets.
+
+
 
 
