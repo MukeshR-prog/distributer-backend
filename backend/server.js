@@ -48,6 +48,7 @@ const careerRoutes = require('./routes/career');
 const talentMarketplaceRoutes = require('./routes/talentMarketplace');
 const successionRoutes = require('./routes/succession');
 const simulationRoutes = require('./routes/simulation');
+const networkRoutes = require('./routes/network');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -71,6 +72,16 @@ connectDB().then(() => {
   seedDefaultOpportunities();
   const { identifyHighPotentialEmployees } = require('./services/successionEngine');
   identifyHighPotentialEmployees(false, null);
+
+  // Seed initial ONI snapshot if none exist
+  const NetworkSnapshot = require('./models/NetworkSnapshot');
+  const { generateNetworkHealth } = require('./services/networkIntelligenceEngine');
+  NetworkSnapshot.findOne({}).then(snap => {
+    if (!snap) {
+      console.log("Seeding initial network intelligence metrics...");
+      generateNetworkHealth().catch(err => console.error("Error seeding ONI:", err));
+    }
+  });
 });
 
 // Security middleware
@@ -177,6 +188,7 @@ app.use('/api/career', careerRoutes);
 app.use('/api/talent-marketplace', talentMarketplaceRoutes);
 app.use('/api/succession', successionRoutes);
 app.use('/api/simulation', simulationRoutes);
+app.use('/api/network', networkRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {

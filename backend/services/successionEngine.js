@@ -34,7 +34,7 @@ Ensure the output is pure JSON. Do not include any markdown, explanation wrapper
 /**
  * Rules-based fallback for generating candidate strategic leadership descriptions.
  */
-const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessScore, successionTier, productivity, collaboration, learningProgress) => {
+const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessScore, successionTier, productivity, collaboration, learningProgress, influenceScore, isInfluencerRecommended) => {
   const strengths = [];
   if (productivity >= 80) strengths.push("Strong task execution speed and productivity consistency");
   if (collaboration >= 75) strengths.push("Proactive communication and cross-functional team participation");
@@ -48,7 +48,9 @@ const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessS
   if (developmentAreas.length === 0) developmentAreas.push("Develop formal peer mentoring and escalation management skills");
 
   let recommendationReason = "";
-  if (successionTier === 'Strategic Successor') {
+  if (isInfluencerRecommended) {
+    recommendationReason = `${name} is highly recommended as a Future Team Lead Candidate due to exceptional network influence (${influenceScore}/100) and collaboration presence.`;
+  } else if (successionTier === 'Strategic Successor') {
     recommendationReason = `${name} exhibits exceptional readiness and leadership qualities, making them an immediate successor for a ${targetRole} position.`;
   } else if (successionTier === 'High Potential') {
     recommendationReason = `${name} shows high potential with strong performance metrics and active engagement, well-suited for a ${targetRole} path.`;
@@ -59,7 +61,7 @@ const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessS
   }
 
   // Recommended Team Lead candidate check
-  if (readinessScore > 80 && productivity > 85 && collaboration > 75) {
+  if (!isInfluencerRecommended && readinessScore > 80 && productivity > 85 && collaboration > 75) {
     recommendationReason = `${name} is highly recommended as a Future Team Lead Candidate due to exceptional readiness, productivity, and collaboration activity.`;
   }
 
@@ -70,10 +72,16 @@ const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessS
   const estimatedReadinessDate = new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000);
 
   const developmentRecommendations = {
-    leadershipTraining: "Participate in conflict resolution, task prioritization, and queue oversight training.",
-    communicationTraining: "Lead status updates in team channels and active operations discussions.",
+    leadershipTraining: isInfluencerRecommended 
+      ? "Complete advanced 'Network Leadership and Departmental Coordination' masterclass."
+      : "Participate in conflict resolution, task prioritization, and queue oversight training.",
+    communicationTraining: isInfluencerRecommended
+      ? "Lead weekly operations updates and alignment syncs across departments."
+      : "Lead status updates in team channels and active operations discussions.",
     projectOwnershipGoals: "Take ownership of complex task distribution sets and SLA breach prevention.",
-    mentorshipGoals: "Mentor newer agents and guide them through operational queue issues."
+    mentorshipGoals: isInfluencerRecommended
+      ? "Take on formal peer mentoring role for 2+ junior agents."
+      : "Mentor newer agents and guide them through operational queue issues."
   };
 
   return {
@@ -88,7 +96,7 @@ const getFallbackSuccessionData = (name, targetRole, leadershipScore, readinessS
 /**
  * Calculates leadership score (0-100) for an agent
  */
-const calculateLeadershipScore = async (agentId) => {
+const calculateLeadershipScore = async (agentId, graphData = null) => {
   try {
     const [prodResult, readinessResult, careerStats, user] = await Promise.all([
       calculateProductivityScore(agentId),
@@ -110,14 +118,25 @@ const calculateLeadershipScore = async (agentId) => {
     const unlockedAchievementsCount = await AgentAchievement.countDocuments({ agentId, isUnlocked: true });
     const achievements = totalAchievementsCount > 0 ? Math.round((unlockedAchievementsCount / totalAchievementsCount) * 100) : 100;
 
-    // Collaboration calculation
-    const [messageCount, discussionCount, replyCount] = await Promise.all([
-      ChannelMessage.countDocuments({ sender: agentId }),
-      TaskDiscussion.countDocuments({ sender: agentId }),
-      TaskDiscussion.countDocuments({ 'replies.sender': agentId })
-    ]);
-    const totalCollabActions = messageCount + discussionCount + replyCount;
-    const collaboration = Math.min(Math.round((totalCollabActions / 20) * 100), 100);
+    // Collaboration & Network Influence calculation
+    let collaboration = 0;
+    let influenceScore = 15; // default minimum
+
+    if (graphData && graphData.agents) {
+      const graphAgent = graphData.agents.find(a => a.id === agentId.toString());
+      if (graphAgent) {
+        influenceScore = graphAgent.influenceScore || 15;
+        collaboration = Math.min(Math.round((graphAgent.interactions / 20) * 100), 100);
+      }
+    } else {
+      const [messageCount, discussionCount, replyCount] = await Promise.all([
+        ChannelMessage.countDocuments({ sender: agentId }),
+        TaskDiscussion.countDocuments({ sender: agentId }),
+        TaskDiscussion.countDocuments({ 'replies.sender': agentId })
+      ]);
+      const totalCollabActions = messageCount + discussionCount + replyCount;
+      collaboration = Math.min(Math.round((totalCollabActions / 20) * 100), 100);
+    }
 
     // Coaching Progress
     const totalActions = await CoachingAction.countDocuments({ agentId });
@@ -143,10 +162,11 @@ const calculateLeadershipScore = async (agentId) => {
       (productivity * 0.20) +
       (readinessScore * 0.20) +
       (learningProgress * 0.15) +
-      (collaboration * 0.15) +
+      (collaboration * 0.10) +
+      (influenceScore * 0.10) +
       (coachingProgress * 0.10) +
-      (achievements * 0.10) +
-      (gamificationLevel * 0.10)
+      (achievements * 0.07) +
+      (gamificationLevel * 0.08)
     );
 
     return {
@@ -158,7 +178,8 @@ const calculateLeadershipScore = async (agentId) => {
       coachingProgress,
       achievements,
       gamificationLevel,
-      user
+      user,
+      influenceScore
     };
   } catch (err) {
     console.error(`Error in calculateLeadershipScore for agent ${agentId}:`, err.message);
@@ -191,6 +212,14 @@ const getLatestCandidates = async () => {
 const identifyHighPotentialEmployees = async (force = false, io = null) => {
   try {
     const agents = await User.find({ role: 'agent', isActive: true });
+    
+    // Fetch communication graph once for all agents
+    const { analyzeCommunicationGraph } = require('./networkIntelligenceEngine');
+    const graphData = await analyzeCommunicationGraph().catch(err => {
+      console.error('Error analyzing communication graph in successionEngine:', err.message);
+      return null;
+    });
+
     const candidates = [];
     const generationBatchTime = new Date();
 
@@ -203,7 +232,7 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
         }
       }
 
-      const scoreDetails = await calculateLeadershipScore(agent._id);
+      const scoreDetails = await calculateLeadershipScore(agent._id, graphData);
       const {
         leadershipScore,
         readinessScore,
@@ -212,7 +241,8 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
         learningProgress,
         coachingProgress,
         achievements,
-        user
+        user,
+        influenceScore
       } = scoreDetails;
 
       // Determine Succession Tier
@@ -220,6 +250,8 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
       if (leadershipScore >= 85 && readinessScore >= 80) successionTier = 'Strategic Successor';
       else if (leadershipScore >= 75 || readinessScore >= 75) successionTier = 'High Potential';
       else if (leadershipScore >= 60) successionTier = 'Leadership Ready';
+
+      const isInfluencerRecommended = influenceScore >= 70 && readinessScore >= 75;
 
       // Map progression snapshots to pipeline target roles
       const activeSnapshot = await CareerProgressionSnapshot.findOne({ agentId: agent._id }).sort({ generatedAt: -1 });
@@ -254,7 +286,9 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
           collaboration,
           learningProgress,
           coachingProgress,
-          achievements
+          achievements,
+          influenceScore,
+          isInfluencerRecommended
         };
 
         const userPrompt = `Succession Planning Context: ${JSON.stringify(contextPayload)}`;
@@ -273,7 +307,7 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
         }
       } catch (err) {
         console.warn(`[SuccessionEngine] AI candidate review failed, falling back to rule base: ${err.message}`);
-        const fallback = getFallbackSuccessionData(user.name, targetRole, leadershipScore, readinessScore, successionTier, productivity, collaboration, learningProgress);
+        const fallback = getFallbackSuccessionData(user.name, targetRole, leadershipScore, readinessScore, successionTier, productivity, collaboration, learningProgress, influenceScore, isInfluencerRecommended);
         aiData = {
           strengths: fallback.strengths,
           developmentAreas: fallback.developmentAreas,
@@ -294,9 +328,10 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
         strengths: aiData.strengths,
         developmentAreas: aiData.developmentAreas,
         recommendationReason: aiData.recommendationReason,
+        influenceScore,
+        isInfluencerRecommended,
         estimatedReadinessDate: aiData.estimatedReadinessDate || new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
         generatedAt: generationBatchTime,
-        // We will store developmental recommendations temporarily or compute them on request
       });
 
       // Save custom fields in metadata/snapshot structure if needed, or compute recommendations dynamically
@@ -351,6 +386,8 @@ const generateDevelopmentRecommendations = (candidate) => {
   const readinessScore = candidate.readinessScore || 50;
   const tier = candidate.successionTier || 'Emerging Leader';
   const role = candidate.targetRole || 'Mentor';
+  const isInfluencerRecommended = candidate.isInfluencerRecommended || false;
+  const influenceScore = candidate.influenceScore || 15;
 
   // Rule-based recommendations based on leadership metric parameters
   let leadershipTraining = "Participate in conflict resolution, task prioritization, and queue oversight training.";
@@ -358,7 +395,11 @@ const generateDevelopmentRecommendations = (candidate) => {
   let projectOwnershipGoals = "Take ownership of complex task distribution sets and SLA breach prevention.";
   let mentorshipGoals = "Mentor newer agents and guide them through operational queue issues.";
 
-  if (tier === 'Strategic Successor') {
+  if (isInfluencerRecommended) {
+    leadershipTraining = "Complete advanced 'Network Leadership and Departmental Coordination' masterclass.";
+    communicationTraining = "Lead weekly operations updates and alignment syncs across departments.";
+    mentorshipGoals = "Take on formal peer mentoring role for 2+ junior agents.";
+  } else if (tier === 'Strategic Successor') {
     leadershipTraining = `Complete advanced "${role} Executive Masterclass" training and shadow current leaders.`;
     projectOwnershipGoals = "Lead cross-functional workspace optimization projects and SLA audits.";
   } else if (tier === 'Emerging Leader') {

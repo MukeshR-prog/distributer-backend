@@ -34,6 +34,14 @@ const successionCandidateSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  influenceScore: {
+    type: Number,
+    default: 15
+  },
+  isInfluencerRecommended: {
+    type: Boolean,
+    default: false
+  },
   recommendationReason: {
     type: String,
     required: true

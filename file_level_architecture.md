@@ -698,6 +698,201 @@ graph TD
 - **Path**: [SimulationResultsPanel.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationResultsPanel.jsx) [NEW]
   - **Role**: Renders suitability ratings and detailed metrics change badges.
 - **Path**: [SimulationHistoryTable.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationHistoryTable.jsx) [NEW]
+    Dashboard -->|Mounts| Roadmap
+    Dashboard -->|Mounts| Checklist
+    Dashboard -->|Mounts| Insights
+```
+
+### Backend Models & Services
+- **Path**: [CareerProgressionSnapshot.js](file:///d:/mern/distributer/backend/models/CareerProgressionSnapshot.js) [NEW]
+  - **Role**: Database schema tracking readiness scores, levels, target tiers, strengths, weaknesses, checklists, and 4-week timelines.
+- **Path**: [careerProgressionEngine.js](file:///d:/mern/distributer/backend/services/careerProgressionEngine.js) [NEW]
+  - **Role**: Operations engine calculating consolidated readiness score using productivity (25%), learning (20%), achievements (15%), collaboration (10%), SLA (15%), and coaching (15%) metrics.
+- **Path**: [careerController.js](file:///d:/mern/distributer/backend/controllers/careerController.js) [NEW]
+  - **Role**: Implements API profile, readiness, roadmap, and force-regenerate actions.
+- **Path**: [career.js](file:///d:/mern/distributer/backend/routes/career.js) [NEW]
+  - **Role**: Routes /api/career requests.
+
+### Frontend Components
+- **Path**: [PromotionReadinessCard.jsx](file:///d:/mern/distributer/client/src/components/career/PromotionReadinessCard.jsx) [NEW]
+  - **Role**: Renders overall promotion readiness percentage using a radial progress circle.
+- **Path**: [CareerRoadmap.jsx](file:///d:/mern/distributer/client/src/components/career/CareerRoadmap.jsx) [NEW]
+  - **Role**: Maps 4-week timeline checkpoints of actionable tasks alongside target skills and courses.
+- **Path**: [PromotionChecklist.jsx](file:///d:/mern/distributer/client/src/components/career/PromotionChecklist.jsx) [NEW]
+  - **Role**: Renders met and pending prerequisite checklists for next tier promotion.
+- **Path**: [CareerInsights.jsx](file:///d:/mern/distributer/client/src/components/career/CareerInsights.jsx) [NEW]
+  - **Role**: Displays positive strengths, development needs, and career goals.
+- **Path**: [CareerGrowthDashboard.jsx](file:///d:/mern/distributer/client/src/components/career/CareerGrowthDashboard.jsx) [NEW]
+  - **Role**: Orchestrates all subcomponent data fetching, manual snapshot regeneration triggers, and layout grid views.
+
+---
+
+## 13. Internal Talent Marketplace & Opportunity Engine (Commit 7)
+
+This section maps the structural components added to manage internal opportunities, rank recommendations, and submit applications.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/talentMarketplaceController.js"]:::newFile
+    Engine["services/talentMarketplaceEngine.js"]:::newFile
+    OppModel["models/Opportunity.js"]:::newFile
+    AppModel["models/OpportunityApplication.js"]:::newFile
+    Routes["routes/talentMarketplace.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/talent/TalentMarketplaceDashboard.jsx"]:::newFile
+    Card["components/talent/OpportunityCard.jsx"]:::newFile
+    Recommended["components/talent/RecommendedOpportunities.jsx"]:::newFile
+    Tracker["components/talent/ApplicationTracker.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Opportunity| OppModel
+    Engine -->|Persists Application| AppModel
+
+    Dashboard -->|Mounts| Card
+    Dashboard -->|Mounts| Recommended
+    Dashboard -->|Mounts| Tracker
+```
+
+### Backend Models & Services
+- **Path**: [Opportunity.js](file:///d:/mern/distributer/backend/models/Opportunity.js) [NEW]
+  - **Role**: Database schema representing projects, assignments, mentorships, and programs.
+- **Path**: [OpportunityApplication.js](file:///d:/mern/distributer/backend/models/OpportunityApplication.js) [NEW]
+  - **Role**: Database schema tracking applications submitted by agents and status reviews.
+- **Path**: [talentMarketplaceEngine.js](file:///d:/mern/distributer/backend/services/talentMarketplaceEngine.js) [NEW]
+  - **Role**: Operations engine running default seedings and evaluating matchmaking percentages based on metrics (Productivity, Readiness, Learning, Achievements, Collab) and certification skills.
+- **Path**: [talentMarketplaceController.js](file:///d:/mern/distributer/backend/controllers/talentMarketplaceController.js) [NEW]
+  - **Role**: Implements endpoints for opportunities, ranked recommendations, applications tracker, and apply triggers.
+- **Path**: [talentMarketplace.js](file:///d:/mern/distributer/backend/routes/talentMarketplace.js) [NEW]
+  - **Role**: Route mapping for /api/talent-marketplace.
+
+### Frontend Components
+- **Path**: [OpportunityCard.jsx](file:///d:/mern/distributer/client/src/components/talent/OpportunityCard.jsx) [NEW]
+  - **Role**: Renders opportunity metadata, categories, rewards, and checklist status indicators.
+- **Path**: [RecommendedOpportunities.jsx](file:///d:/mern/distributer/client/src/components/talent/RecommendedOpportunities.jsx) [NEW]
+  - **Role**: Displays AI matching ranked list of suggestions.
+- **Path**: [ApplicationTracker.jsx](file:///d:/mern/distributer/client/src/components/talent/ApplicationTracker.jsx) [NEW]
+  - **Role**: Status logs table summarizing applied opportunities and reviewer decisions.
+- **Path**: [TalentMarketplaceDashboard.jsx](file:///d:/mern/distributer/client/src/components/talent/TalentMarketplaceDashboard.jsx) [NEW]
+  - **Role**: Orchestrates all subcomponent states, API submissions, sub-tab selection triggers, and grid layouts.
+
+---
+
+## 14. Succession Planning & Leadership Pipeline Engine (Commit 8)
+
+This section maps the structural components added to manage internal succession plans, identify high-potential candidates, and display ranked leadership pipelines on the admin console.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/successionController.js"]:::newFile
+    Engine["services/successionEngine.js"]:::newFile
+    Model["models/SuccessionCandidate.js"]:::newFile
+    Routes["routes/succession.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/succession/SuccessionDashboard.jsx"]:::newFile
+    ScoreCard["components/succession/LeadershipScoreCard.jsx"]:::newFile
+    Pipeline["components/succession/SuccessionPipeline.jsx"]:::newFile
+    Grid["components/succession/HighPotentialGrid.jsx"]:::newFile
+    DevPlan["components/succession/LeadershipDevelopmentPlan.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Candidate Snapshot| Model
+
+    Dashboard -->|Mounts| ScoreCard
+    Dashboard -->|Mounts| Pipeline
+    Dashboard -->|Mounts| Grid
+    Dashboard -->|Mounts| DevPlan
+```
+
+### Backend Models & Services
+- **Path**: [SuccessionCandidate.js](file:///d:/mern/distributer/backend/models/SuccessionCandidate.js) [NEW]
+  - **Role**: Database schema representing succession planning evaluations, scores, tiers, target roles, strengths, and weaknesses.
+- **Path**: [successionEngine.js](file:///d:/mern/distributer/backend/services/successionEngine.js) [NEW]
+  - **Role**: Operations engine calculating leadership score from metrics (Productivity 20%, Readiness 20%, Learning 15%, Collab 15%, Coaching 10%, Achievements 10%, Level 10%), identifying HiPo, and managing pipelines.
+- **Path**: [successionController.js](file:///d:/mern/distributer/backend/controllers/successionController.js) [NEW]
+  - **Role**: Implements endpoints for dashboard stats, candidates summaries, ranked pipelines, and forced recalculation triggers.
+- **Path**: [succession.js](file:///d:/mern/distributer/backend/routes/succession.js) [NEW]
+  - **Role**: Express route protection mapping endpoints.
+
+### Frontend Components
+- **Path**: [LeadershipScoreCard.jsx](file:///d:/mern/distributer/client/src/components/succession/LeadershipScoreCard.jsx) [NEW]
+  - **Role**: Displays radial SVG leadership score gauge and succession tier tags.
+- **Path**: [SuccessionPipeline.jsx](file:///d:/mern/distributer/client/src/components/succession/SuccessionPipeline.jsx) [NEW]
+  - **Role**: Kanban-style lanes sorting candidates into Team Lead, Mentor, Department, and Operations pipelines.
+- **Path**: [HighPotentialGrid.jsx](file:///d:/mern/distributer/client/src/components/succession/HighPotentialGrid.jsx) [NEW]
+  - **Role**: Card grid rendering key strengths, targets, and scores for HiPo candidates.
+- **Path**: [LeadershipDevelopmentPlan.jsx](file:///d:/mern/distributer/client/src/components/succession/LeadershipDevelopmentPlan.jsx) [NEW]
+  - **Role**: Panel mapping strengths, focus zones, estimated timelines, and developmental action recommendations.
+- **Path**: [SuccessionDashboard.jsx](file:///d:/mern/distributer/client/src/components/succession/SuccessionDashboard.jsx) [NEW]
+  - **Role**: Admin console dashboard coordinating candidate data and recalculation updates.
+
+---
+
+## 15. Workforce Digital Twin & Scenario Simulation Engine (Commit 10)
+
+This section maps the structural components added to manage dynamic workforce simulations, digital twin calculations, and strategic recommendation leaderboards in the admin dashboard workspace.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/simulationController.js"]:::newFile
+    Engine["services/workforceSimulationEngine.js"]:::newFile
+    Model["models/SimulationScenario.js"]:::newFile
+    Routes["routes/simulation.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/simulation/SimulationDashboard.jsx"]:::newFile
+    Planner["components/simulation/ScenarioPlanner.jsx"]:::newFile
+    CompareCard["components/simulation/ForecastComparisonCard.jsx"]:::newFile
+    ResultsPanel["components/simulation/SimulationResultsPanel.jsx"]:::newFile
+    HistoryTable["components/simulation/SimulationHistoryTable.jsx"]:::newFile
+    Strategic["components/simulation/StrategicRecommendations.jsx"]:::newFile
+    RankingBoard["components/simulation/ScenarioRankingBoard.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Run Snapshots| Model
+
+    Dashboard -->|Mounts| Planner
+    Dashboard -->|Mounts| CompareCard
+    Dashboard -->|Mounts| ResultsPanel
+    Dashboard -->|Mounts| HistoryTable
+    Dashboard -->|Mounts| Strategic
+    Dashboard -->|Mounts| RankingBoard
+```
+
+### Backend Models & Services
+- **Path**: [SimulationScenario.js](file:///d:/mern/distributer/backend/models/SimulationScenario.js) [NEW]
+  - **Role**: Database model representing simulated operations runs, configurations, forecasted parameters, and classifications.
+- **Path**: [workforceSimulationEngine.js](file:///d:/mern/distributer/backend/services/workforceSimulationEngine.js) [NEW]
+  - **Role**: Backend service containing the logic for SLA, Risk, Capacity, Health, and Suitability index calculations.
+- **Path**: [simulationController.js](file:///d:/mern/distributer/backend/controllers/simulationController.js) [NEW]
+  - **Role**: Controller managing requests for custom simulations, history logs, clearing runs, and strategic scenarios seeding.
+- **Path**: [simulation.js](file:///d:/mern/distributer/backend/routes/simulation.js) [NEW]
+  - **Role**: Express routing configuration restricting endpoints to `admin` scope.
+
+### Frontend Components
+- **Path**: [ScenarioPlanner.jsx](file:///d:/mern/distributer/client/src/components/simulation/ScenarioPlanner.jsx) [NEW]
+  - **Role**: Inputs slider panel for hiring, releasing, automations, reallocations, and team setup names.
+- **Path**: [ForecastComparisonCard.jsx](file:///d:/mern/distributer/client/src/components/simulation/ForecastComparisonCard.jsx) [NEW]
+  - **Role**: Compares baseline operational parameters side-by-side with predicted values.
+- **Path**: [SimulationResultsPanel.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationResultsPanel.jsx) [NEW]
+  - **Role**: Renders suitability ratings and detailed metrics change badges.
+- **Path**: [SimulationHistoryTable.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationHistoryTable.jsx) [NEW]
   - **Role**: Records and displays past custom simulations ran by administrative leaders.
 - **Path**: [StrategicRecommendations.jsx](file:///d:/mern/distributer/client/src/components/simulation/StrategicRecommendations.jsx) [NEW]
   - **Role**: Displays cards summarizing Recommended, Best Case, and Worst Case operational profiles.
@@ -705,3 +900,59 @@ graph TD
   - **Role**: Suitability leaderboard sorting all active strategic and customized plans.
 - **Path**: [SimulationDashboard.jsx](file:///d:/mern/distributer/client/src/components/simulation/SimulationDashboard.jsx) [NEW]
   - **Role**: Coordinates data loading, simulator executions, history clearing, and layout grids.
+
+---
+
+## 16. Organizational Network Intelligence (ONI) (Commit 11)
+
+This section maps the structural components added to manage team collaboration patterns, communication networks, knowledge flows, dynamic risk audits, connectivity matrix heatmaps, and network influencers rosters.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/networkController.js"]:::newFile
+    Engine["services/networkIntelligenceEngine.js"]:::newFile
+    Model["models/NetworkSnapshot.js"]:::newFile
+    Routes["routes/network.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/network/NetworkDashboard.jsx"]:::newFile
+    HealthCard["components/network/NetworkHealthCard.jsx"]:::newFile
+    Leaderboard["components/network/InfluencerLeaderboard.jsx"]:::newFile
+    Matrix["components/network/TeamConnectivityMatrix.jsx"]:::newFile
+    RiskPanel["components/network/OrganizationalRiskPanel.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Network Snapshots| Model
+
+    Dashboard -->|Mounts| HealthCard
+    Dashboard -->|Mounts| Leaderboard
+    Dashboard -->|Mounts| Matrix
+    Dashboard -->|Mounts| RiskPanel
+```
+
+### Backend Models & Services
+- **Path**: [NetworkSnapshot.js](file:///d:/mern/distributer/backend/models/NetworkSnapshot.js) [NEW]
+  - **Role**: Database model representing network collaboration scores, knowledge flow indices, department interaction metrics, and communication risk summaries.
+- **Path**: [networkIntelligenceEngine.js](file:///d:/mern/distributer/backend/services/networkIntelligenceEngine.js) [NEW]
+  - **Role**: Graph building and calculation logic assessing message, task thread, SOP wiki, and mentorship connections. Also evaluates isolated users, knowledge silos, and connectivity matrices.
+- **Path**: [networkController.js](file:///d:/mern/distributer/backend/controllers/networkController.js) [NEW]
+  - **Role**: Controller implementing endpoints for health metrics, influencer rosters, department bottleneck risks, and department connectivity heatmaps.
+- **Path**: [network.js](file:///d:/mern/distributer/backend/routes/network.js) [NEW]
+  - **Role**: Routing definitions protecting network intelligence statistics.
+
+### Frontend Components
+- **Path**: [NetworkHealthCard.jsx](file:///d:/mern/distributer/client/src/components/network/NetworkHealthCard.jsx) [NEW]
+  - **Role**: Displays overall network health gauges and indicators for collaboration, engagement, and knowledge flow.
+- **Path**: [InfluencerLeaderboard.jsx](file:///d:/mern/distributer/client/src/components/network/InfluencerLeaderboard.jsx) [NEW]
+  - **Role**: Rankings roster highlighting top collaborators, mentors, knowledge builders, and communication champions.
+- **Path**: [TeamConnectivityMatrix.jsx](file:///d:/mern/distributer/client/src/components/network/TeamConnectivityMatrix.jsx) [NEW]
+  - **Role**: Interactive color-shaded matrix heatmap representing inter-department collaboration volumes.
+- **Path**: [OrganizationalRiskPanel.jsx](file:///d:/mern/distributer/client/src/components/network/OrganizationalRiskPanel.jsx) [NEW]
+  - **Role**: Panel auditing operational risk factors like isolated nodes, low engagement users, department bottlenecks, and knowledge silos.
+- **Path**: [NetworkDashboard.jsx](file:///d:/mern/distributer/client/src/components/network/NetworkDashboard.jsx) [NEW]
+  - **Role**: Main administrative workspace coordinating network API payloads and grid renders.

@@ -465,6 +465,43 @@ The calculations engine continuously evaluates and maintains strategic profile t
 - **Worst Case: Personnel Downsizing**: Modeled with personnel releases and low workload offsets.
 - **Recommended: Balanced Optimization**: Target profile mapping mild staffing growths paired with mid-tier automation offsets.
 
+---
 
+## 16. Organizational Network Intelligence (ONI)
 
+The **Organizational Network Intelligence (ONI)** module introduces real-time team collaboration tracking, communication density evaluations, and operational risk audits (isolated nodes, knowledge silos, communication bottlenecks).
 
+### 1. Influence Score Formula
+The system evaluates the network presence and suitability of every active agent using communication, document creation, and mentorship parameters:
+$$InfluenceScore = \text{MessagesSent} \times 0.2 + \text{MentionsReceived} \times 0.3 + \text{SOPWikis} \times 1.5 + \text{MentorApps} \times 2.0$$
+
+The raw score is normalized on a scale of `15–100`:
+$$InfluenceScore_{Normalized} = \max(15, \min(100, \text{round}(15 + InfluenceScore)))$$
+
+Where:
+- **MessagesSent**: Total messages dispatched in Team/Department/General channels + replies in task discussions.
+- **MentionsReceived**: Total mentions of the user's ID in active channels and comments.
+- **SOPWikis**: Number of wiki/knowledge base documents created.
+- **MentorApps**: Accepted applications for mentorship/leadership marketplace opportunities.
+
+### 2. Network Health Metrics
+The dashboard compiles overall operational collaboration indicators:
+- **Collaboration Score**: Evaluated using communication density (average interactions across the workforce).
+- **Engagement Score**: Percentage of agents with $\ge 3$ communication actions in channels.
+- **Knowledge Flow Score**: Compiled from total active wikis ($\times 2.5$) and accepted mentorships ($\times 4$).
+- **Network Health Score**: Composite blend of network elements:
+  $$NetworkHealth = (Collaboration \times 0.35) + (Engagement \times 0.35) + (KnowledgeFlow \times 0.30)$$
+
+### 3. Organizational Risk Auditing
+- **Isolated Employees**: Active agents returning $0$ interactions.
+- **Low Engagement Users**: Active agents returning $< 4$ total interactions.
+- **Knowledge Silos**: Flagged when a single agent creates $\ge 80\%$ of all SOP articles created in their department (with a minimum of 3 departmental articles).
+- **Communication Bottlenecks**: Flagged for departments where communication density (interactions / agent count) falls below a $1.5$ index.
+
+### 4. Department Connectivity Weight Matrix
+Heatmap linkages are generated using cross-department mentions. When an agent in Department A mentions an agent in Department B, the connection weight increases by $4$ points (scaled up to $100\%$ limit).
+
+### 5. Talent Succession Planning Integration
+- **Leadership Score Adjustment**: The succession engine integrates `influenceScore` directly as a capability factor:
+  $$LeadershipScore = (Productivity \times 0.20) + (Readiness \times 0.20) + (LearningProgress \times 0.15) + (Collaboration \times 0.10) + (InfluenceScore \times 0.10) + (CoachingProgress \times 0.10) + (Achievements \times 0.07) + (LevelScore \times 0.08)$$
+- **Future Team Lead Recommendations**: Candidates having `influenceScore` $\ge 70$ and promotion `readinessScore` $\ge 75$ are flagged with an `isInfluencerRecommended: true` recommendation badge. Their developmental tracks are updated to focus on cross-department coordination and peer mentoring roles.
