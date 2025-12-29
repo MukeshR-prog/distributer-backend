@@ -956,3 +956,59 @@ graph TD
   - **Role**: Panel auditing operational risk factors like isolated nodes, low engagement users, department bottlenecks, and knowledge silos.
 - **Path**: [NetworkDashboard.jsx](file:///d:/mern/distributer/client/src/components/network/NetworkDashboard.jsx) [NEW]
   - **Role**: Main administrative workspace coordinating network API payloads and grid renders.
+
+---
+
+## 17. Workforce Intelligence Recommendation Engine (Commit 12)
+
+This section maps the structural components added to manage unified workforce recommendations, confidence metrics scores, priority insights panels, executive briefing health dials, and historical action log timelines.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Controller["controllers/workforceIntelligenceController.js"]:::newFile
+    Engine["services/workforceIntelligenceEngine.js"]:::newFile
+    Model["models/WorkforceRecommendation.js"]:::newFile
+    Routes["routes/workforceIntelligence.js"]:::newFile
+    Server["server.js"]:::modFile
+
+    Dashboard["components/workforce-intelligence/WorkforceIntelligenceDashboard.jsx"]:::newFile
+    Card["components/workforce-intelligence/RecommendationCard.jsx"]:::newFile
+    Briefing["components/workforce-intelligence/ExecutiveBriefing.jsx"]:::newFile
+    Insights["components/workforce-intelligence/PriorityInsightsPanel.jsx"]:::newFile
+    Timeline["components/workforce-intelligence/RecommendationTimeline.jsx"]:::newFile
+
+    Server -->|Mounts| Routes
+    Routes -->|Endpoints| Controller
+    Controller -->|Invokes| Engine
+    Engine -->|Persists Recommendations Snapshot| Model
+
+    Dashboard -->|Mounts| Card
+    Dashboard -->|Mounts| Briefing
+    Dashboard -->|Mounts| Insights
+    Dashboard -->|Mounts| Timeline
+```
+
+### Backend Models & Services
+- **Path**: [WorkforceRecommendation.js](file:///d:/mern/distributer/backend/models/WorkforceRecommendation.js) [NEW]
+  - **Role**: Database model representing strategic recommendations, enums, confidence ratings, and source systems.
+- **Path**: [workforceIntelligenceEngine.js](file:///d:/mern/distributer/backend/services/workforceIntelligenceEngine.js) [NEW]
+  - **Role**: Decision engine coordinating inputs across all platform modules to generate recommendations, calculate weighted confidence ratings, and pull executive insights.
+- **Path**: [workforceIntelligenceController.js](file:///d:/mern/distributer/backend/controllers/workforceIntelligenceController.js) [NEW]
+  - **Role**: Controller implementing endpoints for dashboard aggregations, active recommendations, accept/dismiss actions, and force regenerations.
+- **Path**: [workforceIntelligence.js](file:///d:/mern/distributer/backend/routes/workforceIntelligence.js) [NEW]
+  - **Role**: Route middleware definitions restricting endpoints to admin tokens.
+
+### Frontend Components
+- **Path**: [RecommendationCard.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/RecommendationCard.jsx) [NEW]
+  - **Role**: Glassmorphic card rendering type, priority colors, confidence ratings, source systems, and accept/dismiss action triggers.
+- **Path**: [PriorityInsightsPanel.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/PriorityInsightsPanel.jsx) [NEW]
+  - **Role**: Summary dashboard listing immediate critical actions, high impact opportunities, and quick risk tallies.
+- **Path**: [ExecutiveBriefing.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/ExecutiveBriefing.jsx) [NEW]
+  - **Role**: Briefing panel presenting a circular SVG workforce health gauge, pipeline readiness numbers, and matched talent postings.
+- **Path**: [RecommendationTimeline.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/RecommendationTimeline.jsx) [NEW]
+  - **Role**: Vertical timeline feed tracing logs of accepted and dismissed executive decisions.
+- **Path**: [WorkforceIntelligenceDashboard.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/WorkforceIntelligenceDashboard.jsx) [NEW]
+  - **Role**: Orchestration dashboard holding sub-tab navigation states, loaders, and regeneration triggers.

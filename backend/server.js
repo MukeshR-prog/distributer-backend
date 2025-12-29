@@ -49,6 +49,7 @@ const talentMarketplaceRoutes = require('./routes/talentMarketplace');
 const successionRoutes = require('./routes/succession');
 const simulationRoutes = require('./routes/simulation');
 const networkRoutes = require('./routes/network');
+const workforceIntelligenceRoutes = require('./routes/workforceIntelligence');
 const { initializeAutomationEngine } = require('./services/automationEngine');
 
 // Initialize Express app
@@ -80,6 +81,16 @@ connectDB().then(() => {
     if (!snap) {
       console.log("Seeding initial network intelligence metrics...");
       generateNetworkHealth().catch(err => console.error("Error seeding ONI:", err));
+    }
+  });
+
+  // Seed initial workforce recommendations if none exist
+  const WorkforceRecommendation = require('./models/WorkforceRecommendation');
+  const { generateRecommendations } = require('./services/workforceIntelligenceEngine');
+  WorkforceRecommendation.findOne({}).then(rec => {
+    if (!rec) {
+      console.log("Seeding initial workforce recommendations...");
+      generateRecommendations(false, null).catch(err => console.error("Error seeding recommendations:", err));
     }
   });
 });
@@ -189,6 +200,7 @@ app.use('/api/talent-marketplace', talentMarketplaceRoutes);
 app.use('/api/succession', successionRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/network', networkRoutes);
+app.use('/api/workforce-intelligence', workforceIntelligenceRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {

@@ -505,3 +505,35 @@ Heatmap linkages are generated using cross-department mentions. When an agent in
 - **Leadership Score Adjustment**: The succession engine integrates `influenceScore` directly as a capability factor:
   $$LeadershipScore = (Productivity \times 0.20) + (Readiness \times 0.20) + (LearningProgress \times 0.15) + (Collaboration \times 0.10) + (InfluenceScore \times 0.10) + (CoachingProgress \times 0.10) + (Achievements \times 0.07) + (LevelScore \times 0.08)$$
 - **Future Team Lead Recommendations**: Candidates having `influenceScore` $\ge 70$ and promotion `readinessScore` $\ge 75$ are flagged with an `isInfluencerRecommended: true` recommendation badge. Their developmental tracks are updated to focus on cross-department coordination and peer mentoring roles.
+
+---
+
+## 17. Workforce Intelligence Recommendation Engine
+
+The **Workforce Intelligence Recommendation Engine** acts as the central decision-making layer, consolidating indicators from Performance Analytics, Coaching, Learning Progress, Career Readiness, Succession Planning, Talent Marketplace, ONI, and Workforce Optimization.
+
+### 1. Confidence Score Formula
+For any generated recommendation, the system calculates an execution confidence index (0-100%) using a weighted composite of core agent parameters:
+$$ConfidenceScore = (Readiness \times 0.25) + (Influence \times 0.20) + (Productivity \times 0.25) + (Learning \times 0.15) + (Collaboration \times 0.15)$$
+
+Where:
+- **Readiness (25% weight)**: Career promotion readiness snapshot score.
+- **Influence (20% weight)**: ONI communication graph influence score.
+- **Productivity (25% weight)**: Calculated daily throughput score.
+- **Learning (15% weight)**: Skill score representing syllabus certifications completed.
+- **Collaboration (15% weight)**: Chat presence and thread discussion interaction counts.
+
+### 2. Recommendation Decision Pipeline
+The system evaluates active agent records and organizational metrics against structural thresholds:
+- **PROMOTION**: Readiness $\ge 80$, Network Influence $\ge 75$, Productivity $\ge 80$. Suggests promoting to Team Lead.
+- **MENTORSHIP**: Learning $\ge 75$, Collaboration $\ge 70$, Network Influence $\ge 70$. Suggests appointing as Operations Mentor.
+- **RETENTION_RISK**: Productivity $\ge 85$, Readiness $\ge 75$, Collaboration $< 30$. Alerts leaders to high-value talent showing low engagement presence.
+- **TRAINING**: Productivity $< 70$ or Learning progress $< 50$. Recommends upskill syllabus courses.
+- **WORKLOAD_SHIFT**: Discovered when utilization rate of one department exceeds $80\%$ while another operates below $50\%$. Suggests shifting task limits to balance workload.
+
+### 3. Executive Strategic Insights
+The dashboard aggregates the following indicators to summarize operational status:
+- **Workforce Health**: Efficiency score calculated from overall capacity headroom, average risk levels, SLA compliance, and utilization rates.
+- **Leadership Pipeline**: Counts successors across pipelines and tracks their average readiness.
+- **Talent Opportunity Matching**: Matches opportunities with the highest compatible candidates (matchScore $\ge 75\%$).
+- **Emerging Risks**: Audits active isolated employees count, bottlenecks, silos, and critical alerts.
