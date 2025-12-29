@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
 
 const certificationSchema = new mongoose.Schema({
+  // Path certifications compatibility
   agentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
     index: true
   },
   pathId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'LearningPath',
-    required: true,
     index: true
   },
   title: {
@@ -19,8 +18,25 @@ const certificationSchema = new mongoose.Schema({
   },
   code: {
     type: String,
-    required: true,
-    unique: true,
+    index: true
+  },
+  passingScore: {
+    type: Number
+  },
+
+  // Course certifications support
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LearningCourse',
+    index: true
+  },
+  certificateNumber: {
+    type: String,
     index: true
   },
   issuedAt: {
@@ -28,14 +44,25 @@ const certificationSchema = new mongoose.Schema({
     default: Date.now,
     index: true
   },
-  passingScore: {
-    type: Number,
-    required: true
+  expiresAt: {
+    type: Date
+  },
+  score: {
+    type: Number
   }
 }, {
   timestamps: { createdAt: 'issuedAt', updatedAt: false }
 });
 
-certificationSchema.index({ agentId: 1, pathId: 1 }, { unique: true });
+// Compound unique indexes with partialFilterExpression to allow nulls
+certificationSchema.index(
+  { agentId: 1, pathId: 1 }, 
+  { unique: true, partialFilterExpression: { pathId: { $exists: true } } }
+);
+
+certificationSchema.index(
+  { userId: 1, courseId: 1 }, 
+  { unique: true, partialFilterExpression: { courseId: { $exists: true } } }
+);
 
 module.exports = mongoose.model('Certification', certificationSchema);

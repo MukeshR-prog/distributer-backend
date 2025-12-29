@@ -127,6 +127,66 @@ const generateRecommendations = async (force = false, io = null) => {
           status: 'ACTIVE'
         });
       }
+
+      // Check for missing skills/certifications from CareerProgressionSnapshot
+      const CareerProgressionSnapshot = require('../models/CareerProgressionSnapshot');
+      const careerSnapshot = await CareerProgressionSnapshot.findOne({ agentId: agent._id }).sort({ generatedAt: -1 });
+      if (careerSnapshot) {
+        if (careerSnapshot.missingSkills && careerSnapshot.missingSkills.length > 0) {
+          generated.push({
+            recommendationType: 'TRAINING',
+            targetType: 'User',
+            targetId: agent._id,
+            title: `Resolve Missing Skills: ${agent.name}`,
+            description: `${agent.name} is missing key growth skills: ${careerSnapshot.missingSkills.join(', ')}. We recommend enrolling them in relevant certification courses matching these skills.`,
+            priority: 'HIGH',
+            confidenceScore: Math.round(confidence * 0.95),
+            sourceSystems: ['CareerProgression', 'LearningCenter'],
+            status: 'ACTIVE'
+          });
+        }
+        
+        if (careerSnapshot.recommendedCertifications && careerSnapshot.recommendedCertifications.length > 0) {
+          generated.push({
+            recommendationType: 'TRAINING',
+            targetType: 'User',
+            targetId: agent._id,
+            title: `Required Certification: ${agent.name}`,
+            description: `To progress further, ${agent.name} requires recommended certifications: ${careerSnapshot.recommendedCertifications.join(', ')}. Complete these in the Learning Center.`,
+            priority: 'HIGH',
+            confidenceScore: Math.round(confidence * 0.95),
+            sourceSystems: ['CareerProgression', 'LearningCenter'],
+            status: 'ACTIVE'
+          });
+        }
+      }
+
+      // Check if they are a succession candidate and recommend leadership readiness courses
+      const SuccessionCandidate = require('../models/SuccessionCandidate');
+      const successionCandidate = await SuccessionCandidate.findOne({ agentId: agent._id }).sort({ generatedAt: -1 });
+      if (successionCandidate) {
+        const Certification = require('../models/Certification');
+        const LearningCourse = require('../models/LearningCourse');
+        const leadershipCourses = await LearningCourse.find({ category: 'Leadership' }).distinct('_id');
+        const hasLeadershipCert = await Certification.exists({
+          userId: agent._id,
+          courseId: { $in: leadershipCourses }
+        });
+
+        if (!hasLeadershipCert) {
+          generated.push({
+            recommendationType: 'LEADERSHIP',
+            targetType: 'User',
+            targetId: agent._id,
+            title: `Leadership Readiness Course for ${agent.name}`,
+            description: `${agent.name} is identified as a succession candidate for ${successionCandidate.targetRole || 'Mentor'} but has not completed the leadership tracks. Enroll them in "Executive Leadership & Mentorship" to lock in eligibility.`,
+            priority: 'HIGH',
+            confidenceScore: Math.round(confidence * 0.9),
+            sourceSystems: ['SuccessionPlanning', 'LearningCenter'],
+            status: 'ACTIVE'
+          });
+        }
+      }
     }
 
     // 2. Department-level workload shift rules

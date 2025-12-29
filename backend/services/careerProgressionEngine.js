@@ -162,10 +162,12 @@ const evaluateRequirements = (currentTier, completedPathsCount, productivityScor
  */
 const calculatePromotionReadiness = async (agentId) => {
   try {
-    const [prodResult, careerStats, user] = await Promise.all([
+    const { calculateLearningScore } = require('./learningEngine');
+    const [prodResult, careerStats, user, learningScore] = await Promise.all([
       calculateProductivityScore(agentId),
       calculateAgentCareerStats(agentId),
-      User.findById(agentId)
+      User.findById(agentId),
+      calculateLearningScore(agentId)
     ]);
 
     if (!user) {
@@ -173,7 +175,6 @@ const calculatePromotionReadiness = async (agentId) => {
     }
 
     const productivity = prodResult.score || 0;
-    const learningCompletion = careerStats.skillScore || 0;
 
     // Achievements calculation
     const totalAchievementsCount = await Achievement.countDocuments();
@@ -212,8 +213,8 @@ const calculatePromotionReadiness = async (agentId) => {
 
     const readinessScore = Math.round(
       (productivity * 0.25) +
-      (learningCompletion * 0.20) +
-      (achievements * 0.15) +
+      (learningScore * 0.25) +
+      (achievements * 0.10) +
       (collaboration * 0.10) +
       (slaCompliance * 0.15) +
       (coachingProgress * 0.15)

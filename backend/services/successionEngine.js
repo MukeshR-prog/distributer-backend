@@ -233,7 +233,7 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
       }
 
       const scoreDetails = await calculateLeadershipScore(agent._id, graphData);
-      const {
+      let {
         leadershipScore,
         readinessScore,
         productivity,
@@ -245,11 +245,31 @@ const identifyHighPotentialEmployees = async (force = false, io = null) => {
         influenceScore
       } = scoreDetails;
 
+      // Check if they have completed a leadership track course certification
+      const LearningCourse = require('../models/LearningCourse');
+      const leadershipCourses = await LearningCourse.find({ category: 'Leadership' }).distinct('_id');
+      const completedLeadershipCerts = await Certification.countDocuments({
+        userId: agent._id,
+        courseId: { $in: leadershipCourses }
+      });
+
+      if (completedLeadershipCerts > 0) {
+        // Boost leadershipScore by 10 points
+        leadershipScore = Math.min(100, leadershipScore + 10);
+      }
+
       // Determine Succession Tier
       let successionTier = 'Emerging Leader';
       if (leadershipScore >= 85 && readinessScore >= 80) successionTier = 'Strategic Successor';
       else if (leadershipScore >= 75 || readinessScore >= 75) successionTier = 'High Potential';
       else if (leadershipScore >= 60) successionTier = 'Leadership Ready';
+
+      // Automatically upgrade succession eligibility tier if leadership course completed
+      if (completedLeadershipCerts > 0) {
+        if (successionTier === 'Emerging Leader') successionTier = 'Leadership Ready';
+        else if (successionTier === 'Leadership Ready') successionTier = 'High Potential';
+        else if (successionTier === 'High Potential') successionTier = 'Strategic Successor';
+      }
 
       const isInfluencerRecommended = influenceScore >= 70 && readinessScore >= 75;
 

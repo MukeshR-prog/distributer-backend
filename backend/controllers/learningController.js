@@ -456,11 +456,236 @@ const regenerateDevelopmentPlan = asyncHandler(async (req, res) => {
   });
 });
 
+const LearningCourse = require('../models/LearningCourse');
+const CourseEnrollment = require('../models/CourseEnrollment');
+const User = require('../models/User');
+const {
+  seedDefaultCourses,
+  calculateLearningScore,
+  recommendCourses,
+  generateCertification,
+  calculateSkillGrowth,
+  updateCareerReadiness,
+  updateSuccessionEligibility
+} = require('../services/learningEngine');
+
+/**
+ * @desc    Get Enterprise Learning Dashboard Stats
+ * @route   GET /api/learning/dashboard
+ * @access  Private (Agent Only)
+ */
+const getLearningDashboard = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  await seedDefaultCourses();
+
+  const totalCourses = await LearningCourse.countDocuments();
+  const completedCourses = await CourseEnrollment.countDocuments({ userId, status: 'COMPLETED' });
+  const activeCourses = await CourseEnrollment.countDocuments({ userId, status: 'IN_PROGRESS' });
+  const totalCertifications = await Certification.countDocuments({ userId });
+
+  const learningScore = await calculateLearningScore(userId);
+  const skillGrowth = await calculateSkillGrowth(userId);
+
+  res.status(200).json({
+    success: true,
+    totalCourses,
+    activeCourses,
+    completedCourses,
+    totalCertifications,
+    learningScore,
+    skillGrowth
+  });
+});
+
+/**
+ * @desc    Get All Learning Courses
+ * @route   GET /api/learning/courses
+ * @access  Private (Agent Only)
+ */
+const getCourses = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  await seedDefaultCourses();
+
+  const courses = await LearningCourse.find({});
+  const enrollments = await CourseEnrollment.find({ userId });
+
+  const result = courses.map(course => {
+    const enrollment = enrollments.find(e => e.courseId.toString() === course._id.toString());
+    return {
+      _id: course._id,
+      title: course.title,
+      description: course.description,
+      category: course.category,
+      difficulty: course.difficulty,
+      durationHours: course.durationHours,
+      skills: course.skills,
+      prerequisites: course.prerequisites,
+      certificationEnabled: course.certificationEnabled,
+      pointsReward: course.pointsReward,
+      enrollmentStatus: enrollment ? enrollment.status : null,
+      progress: enrollment ? enrollment.progress : 0,
+      score: enrollment ? enrollment.score : 0
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    courses: result
+  });
+});
+
+/**
+ * @desc    Enroll in a Course
+ * @route   POST /api/learning/enroll
+ * @access  Private (Agent Only)
+ */
+const enrollCourse = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { courseId } = req.body;
+
+  if (!courseId) {
+    return res.status(400).json({ success: false, message: "courseId is required" });
+  }
+
+  const course = await LearningCourse.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ success: false, message: "Course not found" });
+  }
+
+  const enrollment = await CourseEnrollment.findOneAndUpdate(
+    { userId, courseId },
+    { status: 'IN_PROGRESS', progress: 0 },
+    { new: true, upsert: true }
+  );
+
+  res.status(200).json({
+    success: true,
+    enrollment
+  });
+});
+
+/**
+ * @desc    Complete a Course (represents a quiz complete)
+ * @route   POST /api/learning/complete
+ * @access  Private (Agent Only)
+ */
+const completeCourse = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { courseId, score = 90 } = req.body;
+  const io = req.app.get('io');
+
+  if (!courseId) {
+    return res.status(400).json({ success: false, message: "courseId is required" });
+  }
+
+  const course = await LearningCourse.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ success: false, message: "Course not found" });
+  }
+
+  const enrollment = await CourseEnrollment.findOneAndUpdate(
+    { userId, courseId },
+    { 
+      status: 'COMPLETED', 
+      progress: 100, 
+      score,
+      completedAt: new Date()
+    },
+    { new: true, upsert: true }
+  );
+
+  // Award rewards (Points/XP)
+  const user = await User.findById(userId);
+  if (user) {
+    user.xp += 100;
+    user.points += course.pointsReward || 50;
+    
+    // Check level up
+    const oldLevel = user.level || 1;
+    const newLevel = Math.floor(user.xp / 1000) + 1;
+    if (newLevel > oldLevel) {
+      user.level = newLevel;
+      if (io) {
+        io.emit('levelUp', { agentId: userId, oldLevel, newLevel });
+      }
+    }
+    
+    await user.save({ validateBeforeSave: false });
+  }
+
+  // Generate Certification
+  const certification = await generateCertification(userId, courseId, score);
+
+  // Trigger recalculations
+  await updateCareerReadiness(userId);
+  await updateSuccessionEligibility(userId);
+
+  // Log activity
+  const { logActivity } = require('../utils/activityLogger');
+  await logActivity({
+    actionType: 'CERTIFICATION_EARNED',
+    entityType: 'Certification',
+    entityId: certification._id,
+    userId,
+    metadata: {
+      certificationId: certification._id,
+      title: certification.title,
+      code: certification.certificateNumber,
+      courseTitle: course.title
+    }
+  }, io);
+
+  res.status(200).json({
+    success: true,
+    enrollment,
+    certification
+  });
+});
+
+/**
+ * @desc    Get All User Certifications
+ * @route   GET /api/learning/certifications
+ * @access  Private (Agent Only)
+ */
+const getCertifications = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const certifications = await Certification.find({ userId })
+    .populate('courseId')
+    .populate('pathId');
+
+  res.status(200).json({
+    success: true,
+    certifications
+  });
+});
+
+/**
+ * @desc    Get Recommended Courses
+ * @route   GET /api/learning/recommendations
+ * @access  Private (Agent Only)
+ */
+const getRecommendations = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const recommendations = await recommendCourses(userId);
+
+  res.status(200).json({
+    success: true,
+    recommendations
+  });
+});
+
 module.exports = {
   getLearningPaths,
   getLearningModuleDetails,
   recordLearningProgress,
   getLearningStatistics,
   getDevelopmentPlan,
-  regenerateDevelopmentPlan
+  regenerateDevelopmentPlan,
+  getLearningDashboard,
+  getCourses,
+  enrollCourse,
+  completeCourse,
+  getCertifications,
+  getRecommendations
 };

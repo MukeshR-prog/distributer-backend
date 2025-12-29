@@ -1012,3 +1012,73 @@ graph TD
   - **Role**: Vertical timeline feed tracing logs of accepted and dismissed executive decisions.
 - **Path**: [WorkforceIntelligenceDashboard.jsx](file:///d:/mern/distributer/client/src/components/workforce-intelligence/WorkforceIntelligenceDashboard.jsx) [NEW]
   - **Role**: Orchestration dashboard holding sub-tab navigation states, loaders, and regeneration triggers.
+
+---
+
+## 18. Enterprise Learning & Certification Management System (Commit 13)
+
+This section maps the structural components added to manage internal learning courses, enrollment states, course-level certifications, upskilling recommendations, skill progression charts, catalogs, and path timelines.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    ModelCourse["models/LearningCourse.js"]:::newFile
+    ModelEnroll["models/CourseEnrollment.js"]:::newFile
+    ModelCert["models/Certification.js"]:::modFile
+    EngineLMS["services/learningEngine.js"]:::newFile
+    ControllerLMS["controllers/learningController.js"]:::modFile
+    RoutesLMS["routes/learning.js"]:::modFile
+
+    DashboardLMS["components/learning/LearningDashboard.jsx"]:::modFile
+    CatalogLMS["components/learning/CourseCatalog.jsx"]:::newFile
+    ProgressLMS["components/learning/LearningProgressCard.jsx"]:::modFile
+    CertCenterLMS["components/learning/CertificationCenter.jsx"]:::newFile
+    RecommendLMS["components/learning/RecommendedLearning.jsx"]:::newFile
+    BoardLMS["components/learning/LearningPathBoard.jsx"]:::newFile
+    ChartLMS["components/learning/SkillGrowthChart.jsx"]:::newFile
+
+    RoutesLMS -->|Endpoints| ControllerLMS
+    ControllerLMS -->|Invokes LMS Calculations| EngineLMS
+    EngineLMS -->|Queries Courses| ModelCourse
+    EngineLMS -->|Manages Enrollments| ModelEnroll
+    EngineLMS -->|Generates Certificates| ModelCert
+
+    DashboardLMS -->|Mounts| CatalogLMS
+    DashboardLMS -->|Mounts| ProgressLMS
+    DashboardLMS -->|Mounts| CertCenterLMS
+    DashboardLMS -->|Mounts| RecommendLMS
+    DashboardLMS -->|Mounts| BoardLMS
+    DashboardLMS -->|Mounts| ChartLMS
+```
+
+### Backend Models & Services
+- **Path**: [LearningCourse.js](file:///d:/mern/distributer/backend/models/LearningCourse.js) [NEW]
+  - **Role**: Database model representing individual courses with category, difficulty, duration, skills, and prerequisite fields.
+- **Path**: [CourseEnrollment.js](file:///d:/mern/distributer/backend/models/CourseEnrollment.js) [NEW]
+  - **Role**: Database model representing user course enrollment progress, status, and completion dates.
+- **Path**: [Certification.js](file:///d:/mern/distributer/backend/models/Certification.js) [MODIFY]
+  - **Role**: Updated model holding course-level certification credentials alongside legacy path certifications.
+- **Path**: [learningEngine.js](file:///d:/mern/distributer/backend/services/learningEngine.js) [NEW]
+  - **Role**: Business logic engine coordinating course seeds, scoring calculations, AI-based upskilling gap course recommendation, radial skill growth calculations, and update triggers.
+- **Path**: [learningController.js](file:///d:/mern/distributer/backend/controllers/learningController.js) [MODIFY]
+  - **Role**: Exposes endpoints for dashboard widgets, course catalogs, enrollment, complete requests, certifications list, and recommendations.
+- **Path**: [learning.js](file:///d:/mern/distributer/backend/routes/learning.js) [MODIFY]
+  - **Role**: Route middleware definitions registering the new controller endpoints.
+
+### Frontend Components
+- **Path**: [CourseCatalog.jsx](file:///d:/mern/distributer/client/src/components/learning/CourseCatalog.jsx) [NEW]
+  - **Role**: Course list grid supporting searches, categories, difficulty selects, and enrollment status controls.
+- **Path**: [SkillGrowthChart.jsx](file:///d:/mern/distributer/client/src/components/learning/SkillGrowthChart.jsx) [NEW]
+  - **Role**: Premium vanilla CSS progress tracker visualizing capabilities growth across the 5 core operational domains.
+- **Path**: [RecommendedLearning.jsx](file:///d:/mern/distributer/client/src/components/learning/RecommendedLearning.jsx) [NEW]
+  - **Role**: Display card highlighting AI-recommended upskilling courses addressing gaps.
+- **Path**: [LearningPathBoard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningPathBoard.jsx) [NEW]
+  - **Role**: Roadmap timeline board displaying module timeline nodes.
+- **Path**: [CertificationCenter.jsx](file:///d:/mern/distributer/client/src/components/learning/CertificationCenter.jsx) [NEW]
+  - **Role**: List of earned certificates supporting mock PDF license downloads.
+- **Path**: [LearningProgressCard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningProgressCard.jsx) [MODIFY]
+  - **Role**: Metric card showing course completions, active courses, and a learning score radial gauge.
+- **Path**: [LearningDashboard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningDashboard.jsx) [MODIFY]
+  - **Role**: Root component coordinating tab displays, loaders, API integrations, and grids.

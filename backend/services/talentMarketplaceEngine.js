@@ -13,17 +13,22 @@ const { calculateAgentCareerStats } = require('./careerGrowthEngine');
 const { calculateProductivityScore } = require('./agentPerformanceEngine');
 
 /**
- * Maps completed paths to skills.
+ * Maps completed paths and courses to skills.
  */
 const getAgentSkills = async (agentId) => {
   try {
-    const certs = await Certification.find({ agentId }).populate('pathId');
+    const certs = await Certification.find({ agentId }).populate('pathId').populate('courseId');
     const skillsSet = new Set();
 
     skillsSet.add('Basic Operations');
     skillsSet.add('Task Resolution');
 
     certs.forEach(c => {
+      // Unpack skills from course-level certifications
+      if (c.courseId && Array.isArray(c.courseId.skills)) {
+        c.courseId.skills.forEach(s => skillsSet.add(s));
+      }
+
       const pathName = c.pathId?.name || c.title || '';
       const nameLower = pathName.toLowerCase();
       
@@ -119,8 +124,28 @@ const calculateMatchScore = async (agentId, opportunity) => {
       skillMatchScore = Math.round((matchingCount / requiredSkills.length) * 100);
     }
 
-    // Final consolidated matchmaking rating (70% Base Metrics, 30% Skill coverage)
-    const finalScore = Math.min(Math.round((baseMatchScore * 0.7) + (skillMatchScore * 0.3)), 100);
+    // Certification Match Boost
+    let certificationBoost = 0;
+    const opportunityCategory = opportunity.category; // Enum e.g. MENTORSHIP, LEADERSHIP, PROJECT
+    const populatedCerts = await Certification.find({ userId: agentId }).populate('courseId');
+
+    const hasLeadershipCert = populatedCerts.some(c => c.courseId?.category === 'Leadership' || c.courseId?.category === 'Management');
+    const hasOperationsCert = populatedCerts.some(c => c.courseId?.category === 'Operations');
+    const hasCommunicationCert = populatedCerts.some(c => c.courseId?.category === 'Communication');
+    const hasAnalyticsCert = populatedCerts.some(c => c.courseId?.category === 'Analytics' || c.courseId?.category === 'Technical');
+
+    if (opportunityCategory === 'LEADERSHIP' && hasLeadershipCert) {
+      certificationBoost += 15;
+    } else if (opportunityCategory === 'MENTORSHIP' && (hasLeadershipCert || hasCommunicationCert)) {
+      certificationBoost += 15;
+    } else if (opportunityCategory === 'SPECIAL_ASSIGNMENT' && (hasOperationsCert || hasAnalyticsCert)) {
+      certificationBoost += 15;
+    } else if (opportunityCategory === 'PROJECT' && hasAnalyticsCert) {
+      certificationBoost += 15;
+    }
+
+    // Final consolidated matchmaking rating (70% Base Metrics, 30% Skill coverage) + Certification Boost
+    const finalScore = Math.min(Math.round((baseMatchScore * 0.7) + (skillMatchScore * 0.3)) + certificationBoost, 100);
     return {
       matchScore: finalScore,
       readinessScore,

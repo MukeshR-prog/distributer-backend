@@ -537,3 +537,35 @@ The dashboard aggregates the following indicators to summarize operational statu
 - **Leadership Pipeline**: Counts successors across pipelines and tracks their average readiness.
 - **Talent Opportunity Matching**: Matches opportunities with the highest compatible candidates (matchScore $\ge 75\%$).
 - **Emerging Risks**: Audits active isolated employees count, bottlenecks, silos, and critical alerts.
+
+---
+
+## 18. Enterprise Learning & Certification Management System
+
+The **Enterprise Learning & Certification Management System** introduces a robust, course-driven upskilling framework that directly links agent learning outcomes with career growth readiness, succession tier eligibility, talent matching, and workforce recommendations.
+
+### 1. Learning Score Formula
+The overall learning score of an agent represents the ratio of completed courses to total available courses, normalized on a scale of `0–100`:
+$$LearningScore = \min\left(100, \max\left(0, \text{round}\left(\frac{\text{CompletedCourses}}{\text{TotalCourses}} \times 100\right)\right)\right)$$
+
+### 2. Career Progression Integration
+The promotion readiness score in [careerProgressionEngine.js](file:///d:/mern/distributer/backend/services/careerProgressionEngine.js) is updated to dynamically fetch the user's `learningScore` (replacing static skill scores) and weights it at exactly `25%` of the overall evaluation:
+$$ReadinessScore = (Productivity \times 0.25) + (LearningScore \times 0.25) + (Achievements \times 0.10) + (Collaboration \times 0.10) + (SLACompliance \times 0.15) + (CoachingProgress \times 0.15)$$
+
+### 3. Succession Eligibility Boosting
+To accelerate leadership pipelines, agents completing leadership development tracks (courses under the `Leadership` category) automatically receive benefits in [successionEngine.js](file:///d:/mern/distributer/backend/services/successionEngine.js):
+- **Leadership Score Bonus**: +10 point boost to their composite `leadershipScore`.
+- **Succession Tier Escalation**: Automatic tier promotion:
+  - *Emerging Leader* ➔ *Leadership Ready*
+  - *Leadership Ready* ➔ *High Potential*
+  - *High Potential* ➔ *Strategic Successor*
+
+### 4. Talent Marketplace Matchmaking
+- **Agent Skills**: Unlocked skills listed on course-level certifications populate the agent's marketplace profile in [talentMarketplaceEngine.js](file:///d:/mern/distributer/backend/services/talentMarketplaceEngine.js).
+- **Matchmaking Boost**: The engine evaluates opportunity categories and adds a +15 point matchmaking bonus if the agent holds a certification directly relevant to the project or mentorship program (e.g. *Leadership* courses matching *LEADERSHIP* opportunities).
+
+### 5. Unified Upskilling Recommendations
+The central recommendation engine in [workforceIntelligenceEngine.js](file:///d:/mern/distributer/backend/services/workforceIntelligenceEngine.js) actively checks for:
+- **Missing Skills**: Recommends relevant courses to resolve missing skills flagged in career snapshot profiles.
+- **Required Certifications**: Issues specific upskill training targets to satisfy pending career progression requirements.
+- **Leadership Readiness**: Automatically suggests "Executive Leadership & Mentorship" to succession candidates lacking leadership credentials.
