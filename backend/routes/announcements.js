@@ -6,7 +6,7 @@ const User = require('../models/User');
 const router = express.Router();
 
 router.use(protect);
-router.use(restrictTo('agent'));
+router.use(restrictTo('agent', 'admin', 'executive'));
 
 /**
  * @desc    Get active announcements matching user scope
@@ -47,7 +47,11 @@ router.get('/', async (req, res) => {
       announcements
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Announcements error:", err.message);
+    res.status(200).json({
+      success: true,
+      announcements: []
+    });
   }
 });
 
