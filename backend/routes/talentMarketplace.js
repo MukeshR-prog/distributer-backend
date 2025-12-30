@@ -11,7 +11,7 @@ const router = express.Router();
 
 // Apply protect and restrictTo agent templates
 router.use(protect);
-router.use(restrictTo('agent'));
+router.use(restrictTo('agent', 'admin', 'executive'));
 
 router.get('/opportunities', getOpportunities);
 router.get('/recommended', getRecommendedOpportunities);
