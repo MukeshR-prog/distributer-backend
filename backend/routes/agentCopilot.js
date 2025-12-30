@@ -8,7 +8,8 @@ const {
   generateFollowup,
   renameSession,
   togglePinSession,
-  deleteSession
+  deleteSession,
+  getBootstrapData
 } = require('../controllers/agentCopilotController');
 
 const router = express.Router();
@@ -17,6 +18,7 @@ const router = express.Router();
 router.use(protect);
 router.use(restrictTo('agent'));
 
+router.get('/bootstrap', getBootstrapData);
 router.get('/summary', getDailySummary);
 router.post('/chat', sendChatPrompt);
 router.get('/recommendations', getSmartPlanner);
