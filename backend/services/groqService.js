@@ -18,7 +18,7 @@ const callGroq = async (systemPrompt, userPrompt, retries = 3, delay = 500) => {
 
   const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
   const payload = {
-    model: 'llama3-8b-8192',
+    model: 'llama-3.1-8b-instant',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
