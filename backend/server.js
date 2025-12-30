@@ -441,4 +441,8 @@ server.listen(PORT, () => {
   initializeAutomationEngine(io);
   const { initializeLiveMetricsEngine } = require('./services/liveMetricsEngine');
   initializeLiveMetricsEngine(io);
+  
+  // Run API Route Health Check
+  const runRouteHealthCheck = require('./utils/routeHealthCheck');
+  runRouteHealthCheck(app);
 });

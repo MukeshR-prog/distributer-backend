@@ -569,3 +569,26 @@ The central recommendation engine in [workforceIntelligenceEngine.js](file:///d:
 - **Missing Skills**: Recommends relevant courses to resolve missing skills flagged in career snapshot profiles.
 - **Required Certifications**: Issues specific upskill training targets to satisfy pending career progression requirements.
 - **Leadership Readiness**: Automatically suggests "Executive Leadership & Mentorship" to succession candidates lacking leadership credentials.
+
+---
+
+## 19. Platform Stabilization, API Recovery & Dashboard Modernization
+
+Introduces enterprise-grade platform stabilization, routing diagnostics, cache deduplication, and a responsive sidebar structure across the platform.
+
+### Route Health Check System
+- **API Inventory**: Declares every endpoint's path, role permissions, and ownership in `api-inventory.md`.
+- **Boot Validation**: Scrapes the Express route mapping hierarchy at startup, verifying all expected API targets are correctly configured and logging anomalies.
+- **Fail-Fast**: Enforces immediate process failure in `development` mode if expected endpoints are missing, preventing unmounted endpoint deployments.
+
+### Frontend API Contract Adapters
+- **Payload Normalization**: The API contract layer (`apiContracts.js`) interceptor maps and normalizes data objects returned by the backend, decoupling client presentation components from database schema changes.
+
+### Caching and Request Deduplication
+- **Bootstrap Consolidation**: Consolidates Agent Copilot summary, recommendations/planner, active workspace analytics, coaching insights, and gamification profile endpoints into a single `GET /api/agent-copilot/bootstrap` fetch operation.
+- **Deduplication Middleware**: Integrates in-memory request caching with concurrent promise deduplication, holding concurrent duplicate requests in a promise queue until the primary call returns.
+
+### State Persistence & Workspace Registry
+- **Sidebar Integration**: The layout maps categories (Workspace, Operations, Leadership) and routes from a central `workspaceRegistry.js` configuration.
+- **URL Parameter Preservation**: The layout preserves user workspace and filter states across refreshes by storing them dynamically inside `localStorage` and `URLSearchParams` (e.g. `?workspace=learning&subtab=certifications`).
+

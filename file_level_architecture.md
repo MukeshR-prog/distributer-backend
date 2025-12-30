@@ -1078,7 +1078,72 @@ graph TD
   - **Role**: Roadmap timeline board displaying module timeline nodes.
 - **Path**: [CertificationCenter.jsx](file:///d:/mern/distributer/client/src/components/learning/CertificationCenter.jsx) [NEW]
   - **Role**: List of earned certificates supporting mock PDF license downloads.
-- **Path**: [LearningProgressCard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningProgressCard.jsx) [MODIFY]
-  - **Role**: Metric card showing course completions, active courses, and a learning score radial gauge.
 - **Path**: [LearningDashboard.jsx](file:///d:/mern/distributer/client/src/components/learning/LearningDashboard.jsx) [MODIFY]
   - **Role**: Root component coordinating tab displays, loaders, API integrations, and grids.
+
+---
+
+## 19. Platform Stabilization, API Recovery & Dashboard Modernization
+
+This section maps the structural components added to verify API routes, implement a frontend API client with normalized contracts, cache API responses, create a workspace registry, and construct a unified collapsible sidebar dashboard shell.
+
+```mermaid
+graph TD
+    classDef newFile fill:#10b981,stroke:#047857,color:#fff;
+    classDef modFile fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+
+    Server["server.js"]:::modFile
+    HealthCheck["utils/routeHealthCheck.js"]:::newFile
+    RequestCache["services/requestCache.js"]:::newFile
+    Inventory["docs/api-inventory.md"]:::newFile
+
+    ApiClient["lib/apiClient.js"]:::newFile
+    ApiContracts["lib/apiContracts.js"]:::newFile
+    Registry["config/workspaceRegistry.js"]:::newFile
+    Sidebar["components/common/DashboardSidebar.jsx"]:::newFile
+    Layout["components/common/DashboardLayout.jsx"]:::newFile
+    Bootstrap["hooks/useDashboardBootstrap.js"]:::newFile
+
+    Server -->|Runs Health Check| HealthCheck
+    HealthCheck -->|Reads Expects| Inventory
+    Server -->|Intercepts Cache| RequestCache
+
+    Layout -->|Integrates Navigation| Sidebar
+    Layout -->|Checks Options| Registry
+    Layout -->|Waterfall Reduction| Bootstrap
+    Bootstrap -->|Fetches Data| ApiClient
+    ApiClient -->|Adapts Payload| ApiContracts
+```
+
+### Backend route checking and Caching
+- **Path**: [api-inventory.md](file:///d:/mern/distributer/backend/docs/api-inventory.md) [NEW]
+  - **Role**: Markdown document indexing all routes, endpoints, ownerships, and expected parameters.
+- **Path**: [routeHealthCheck.js](file:///d:/mern/distributer/backend/utils/routeHealthCheck.js) [NEW]
+  - **Role**: Diagnostic script run on startup that reads the markdown index and audits the active Express app route mapping tree.
+- **Path**: [requestCache.js](file:///d:/mern/distributer/backend/services/requestCache.js) [NEW]
+  - **Role**: Caching middleware with a 5-second TTL, concurrent promise deduplication, and automatic user-level cache clearances on mutations.
+- **Path**: [server.js](file:///d:/mern/distributer/backend/server.js) [MODIFY]
+  - **Role**: Imports and executes `routeHealthCheck` inside the server listen callback.
+
+### Frontend API Layer & Contract Adapters
+- **Path**: [apiClient.js](file:///d:/mern/distributer/client/src/lib/apiClient.js) [NEW]
+  - **Role**: Configures Axios client with environmental baseURL, interceptors for Bearer auth headers, and automated 429 retries.
+- **Path**: [apiContracts.js](file:///d:/mern/distributer/client/src/lib/apiContracts.js) [NEW]
+  - **Role**: Normalized adapter mapping data payloads returned by the endpoints to prevent schema deviations from breaking client widgets.
+
+### Dashboard Shell, Sidebar & Registry
+- **Path**: [workspaceRegistry.js](file:///d:/mern/distributer/client/src/config/workspaceRegistry.js) [NEW]
+  - **Role**: Configures central workspace metadata mapping icons, labels, authorized roles, and dynamic lazy-load loaders.
+- **Path**: [useDashboardBootstrap.js](file:///d:/mern/distributer/client/src/hooks/useDashboardBootstrap.js) [NEW]
+  - **Role**: Call-reduction hook invoking the `/api/agent-copilot/bootstrap` endpoint and sharing response metrics in a global React Context.
+- **Path**: [DashboardSidebar.jsx](file:///d:/mern/distributer/client/src/components/common/DashboardSidebar.jsx) [NEW]
+  - **Role**: Collapsible vertical sidebar rendering links dynamically based on user role authorization categories.
+- **Path**: [DashboardLayout.jsx](file:///d:/mern/distributer/client/src/components/common/DashboardLayout.jsx) [NEW]
+  - **Role**: Central dashboard shell coordinating sidebar toggles, notification badges, profile options, active breadcrumbs, and URL state persistence.
+- **Path**: [DashboardSkeleton.jsx](file:///d:/mern/distributer/client/src/components/common/DashboardSkeleton.jsx) [NEW]
+  - **Role**: Component rendering themed skeleton layouts during lazy-load transitions.
+- **Path**: [EmptyState.jsx](file:///d:/mern/distributer/client/src/components/common/EmptyState.jsx) [NEW]
+  - **Role**: Visual widget feedback panel used for loading anomalies.
+- **Path**: [DashboardErrorBoundary.jsx](file:///d:/mern/distributer/client/src/components/common/DashboardErrorBoundary.jsx) [NEW]
+  - **Role**: Catch-and-recover React Error Boundary wrapping dashboard modules.
+
