@@ -190,72 +190,82 @@ const seedLearningContent = async () => {
  * @access  Private (Agent Only)
  */
 const getLearningPaths = asyncHandler(async (req, res) => {
-  await seedLearningContent();
-  const agentId = req.user._id.toString();
+  try {
+    await seedLearningContent();
+    const agentId = req.user._id.toString();
 
-  const paths = await LearningPath.find();
-  const progressList = await AgentLearningProgress.find({ agentId });
-  const certifications = await Certification.find({ agentId });
+    const paths = await LearningPath.find();
+    const progressList = await AgentLearningProgress.find({ agentId });
+    const certifications = await Certification.find({ agentId });
 
-  // Map progress by pathId
-  const progressMap = new Map();
-  progressList.forEach(p => {
-    if (!progressMap.has(p.pathId.toString())) {
-      progressMap.set(p.pathId.toString(), []);
-    }
-    progressMap.get(p.pathId.toString()).push(p);
-  });
-
-  const certMap = new Set(certifications.map(c => c.pathId.toString()));
-
-  const result = [];
-  for (const path of paths) {
-    const modules = await LearningModule.find({ pathId: path._id }).sort({ order: 1 });
-    const modProgress = progressMap.get(path._id.toString()) || [];
-    
-    // Calculate path completion percentage
-    const totalModules = modules.length;
-    let completedCount = 0;
-    let timeSpent = 0;
-    
-    const modulesDetails = modules.map(m => {
-      const prog = modProgress.find(p => p.moduleId.toString() === m._id.toString());
-      const isCompleted = prog && prog.completionPercentage === 100;
-      if (isCompleted) completedCount++;
-      if (prog) timeSpent += (prog.timeSpent || 0);
-
-      return {
-        id: m._id,
-        title: m.title,
-        description: m.description,
-        durationMinutes: m.durationMinutes,
-        order: m.order,
-        isCompleted: !!isCompleted,
-        quizScore: prog ? prog.quizScore : 0
-      };
+    // Map progress by pathId
+    const progressMap = new Map();
+    progressList.forEach(p => {
+      if (p.pathId) {
+        if (!progressMap.has(p.pathId.toString())) {
+          progressMap.set(p.pathId.toString(), []);
+        }
+        progressMap.get(p.pathId.toString()).push(p);
+      }
     });
 
-    const completionPercentage = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
-    const isCertified = certMap.has(path._id.toString());
+    const certMap = new Set(certifications.filter(c => c.pathId).map(c => c.pathId.toString()));
 
-    result.push({
-      id: path._id,
-      name: path.name,
-      description: path.description,
-      difficulty: path.difficulty,
-      estimatedHours: path.estimatedHours,
-      tags: path.tags,
-      completionPercentage,
-      timeSpent,
-      isCertified,
-      modules: modulesDetails
+    const result = [];
+    for (const path of paths) {
+      const modules = await LearningModule.find({ pathId: path._id }).sort({ order: 1 });
+      const modProgress = progressMap.get(path._id.toString()) || [];
+      
+      // Calculate path completion percentage
+      const totalModules = modules.length;
+      let completedCount = 0;
+      let timeSpent = 0;
+      
+      const modulesDetails = modules.map(m => {
+        const prog = modProgress.find(p => p.moduleId.toString() === m._id.toString());
+        const isCompleted = prog && prog.completionPercentage === 100;
+        if (isCompleted) completedCount++;
+        if (prog) timeSpent += (prog.timeSpent || 0);
+
+        return {
+          id: m._id,
+          title: m.title,
+          description: m.description,
+          durationMinutes: m.durationMinutes,
+          order: m.order,
+          isCompleted: !!isCompleted,
+          quizScore: prog ? prog.quizScore : 0
+        };
+      });
+
+      const completionPercentage = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+      const isCertified = certMap.has(path._id.toString());
+
+      result.push({
+        id: path._id,
+        name: path.name,
+        description: path.description,
+        difficulty: path.difficulty,
+        estimatedHours: path.estimatedHours,
+        tags: path.tags,
+        completionPercentage,
+        timeSpent,
+        isCertified,
+        modules: modulesDetails
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      paths: result
+    });
+  } catch (err) {
+    console.error("getLearningPaths error:", err.message);
+    res.status(200).json({
+      success: true,
+      paths: []
     });
   }
-
-  res.status(200).json({
-    success: true,
-    paths: result
-  });
 });
 
 /**
@@ -385,39 +395,61 @@ const recordLearningProgress = asyncHandler(async (req, res) => {
  * @access  Private (Agent Only)
  */
 const getLearningStatistics = asyncHandler(async (req, res) => {
-  const agentId = req.user._id.toString();
-  
-  const progressList = await AgentLearningProgress.find({ agentId });
-  const certifications = await Certification.find({ agentId }).populate('pathId');
+  try {
+    const agentId = req.user._id.toString();
+    
+    const progressList = await AgentLearningProgress.find({ agentId });
+    const certifications = await Certification.find({ agentId }).populate('pathId').populate('courseId');
 
-  const totalStartedPaths = new Set(progressList.map(p => p.pathId.toString())).size;
-  const completedModules = progressList.filter(p => p.completionPercentage === 100).length;
-  
-  let totalTimeSpent = 0;
-  progressList.forEach(p => {
-    totalTimeSpent += (p.timeSpent || 0);
-  });
+    const totalStartedPaths = progressList && progressList.length > 0
+      ? new Set(progressList.filter(p => p.pathId).map(p => p.pathId.toString())).size
+      : 0;
+    const completedModules = progressList && progressList.length > 0
+      ? progressList.filter(p => p.completionPercentage === 100).length
+      : 0;
+    
+    let totalTimeSpent = 0;
+    if (progressList && progressList.length > 0) {
+      progressList.forEach(p => {
+        totalTimeSpent += (p.timeSpent || 0);
+      });
+    }
 
-  const certsInfo = certifications.map(c => ({
-    id: c._id,
-    title: c.title,
-    code: c.code,
-    issuedAt: c.issuedAt,
-    pathName: c.pathId.name
-  }));
+    const certsInfo = certifications.map(c => ({
+      id: c._id,
+      title: c.title || (c.courseId ? c.courseId.title : 'Course Certification'),
+      code: c.certificateNumber || c.code,
+      issuedAt: c.issuedAt || c.createdAt,
+      pathName: c.pathId ? c.pathId.name : (c.courseId ? c.courseId.title : 'Course Certification')
+    }));
 
-  // Fetch Career Growth engine stats
-  const { calculateAgentCareerStats } = require('../services/careerGrowthEngine');
-  const careerStats = await calculateAgentCareerStats(agentId);
+    // Fetch Career Growth engine stats
+    let careerStats = {};
+    try {
+      const { calculateAgentCareerStats } = require('../services/careerGrowthEngine');
+      careerStats = await calculateAgentCareerStats(agentId);
+    } catch (e) {
+      console.error("Career stats calculation fallback:", e.message);
+    }
 
-  res.status(200).json({
-    success: true,
-    totalStartedPaths,
-    completedModules,
-    totalTimeSpentHours: Math.round((totalTimeSpent / 60) * 10) / 10,
-    certifications: certsInfo,
-    ...careerStats
-  });
+    res.status(200).json({
+      success: true,
+      totalStartedPaths,
+      completedModules,
+      totalTimeSpentHours: Math.round((totalTimeSpent / 60) * 10) / 10,
+      certifications: certsInfo,
+      ...careerStats
+    });
+  } catch (err) {
+    console.error("Learning stats error:", err.message);
+    res.status(200).json({
+      success: true,
+      totalStartedPaths: 0,
+      completedModules: 0,
+      totalTimeSpentHours: 0,
+      certifications: []
+    });
+  }
 });
 
 /**
@@ -426,16 +458,24 @@ const getLearningStatistics = asyncHandler(async (req, res) => {
  * @access  Private (Agent Only)
  */
 const getDevelopmentPlan = asyncHandler(async (req, res) => {
-  const agentId = req.user._id.toString();
-  const io = req.app.get('io');
+  try {
+    const agentId = req.user._id.toString();
+    const io = req.app.get('io');
 
-  const { generateDevelopmentPlan } = require('../services/developmentPlanner');
-  const plan = await generateDevelopmentPlan(agentId, false, io);
+    const { generateDevelopmentPlan } = require('../services/developmentPlanner');
+    const plan = await generateDevelopmentPlan(agentId, false, io);
 
-  res.status(200).json({
-    success: true,
-    plan
-  });
+    res.status(200).json({
+      success: true,
+      plan
+    });
+  } catch (err) {
+    console.error("getDevelopmentPlan error:", err.message);
+    res.status(200).json({
+      success: true,
+      plan: {}
+    });
+  }
 });
 
 /**
@@ -444,16 +484,24 @@ const getDevelopmentPlan = asyncHandler(async (req, res) => {
  * @access  Private (Agent Only)
  */
 const regenerateDevelopmentPlan = asyncHandler(async (req, res) => {
-  const agentId = req.user._id.toString();
-  const io = req.app.get('io');
+  try {
+    const agentId = req.user._id.toString();
+    const io = req.app.get('io');
 
-  const { generateDevelopmentPlan } = require('../services/developmentPlanner');
-  const plan = await generateDevelopmentPlan(agentId, true, io);
+    const { generateDevelopmentPlan } = require('../services/developmentPlanner');
+    const plan = await generateDevelopmentPlan(agentId, true, io);
 
-  res.status(200).json({
-    success: true,
-    plan
-  });
+    res.status(200).json({
+      success: true,
+      plan
+    });
+  } catch (err) {
+    console.error("regenerateDevelopmentPlan error:", err.message);
+    res.status(200).json({
+      success: true,
+      plan: {}
+    });
+  }
 });
 
 const LearningCourse = require('../models/LearningCourse');

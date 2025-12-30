@@ -17,9 +17,9 @@ const {
 
 const router = express.Router();
 
-// Apply protect and restrictTo agent templates
+// Apply protect and restrictTo templates
 router.use(protect);
-router.use(restrictTo('agent'));
+router.use(restrictTo('agent', 'admin', 'executive'));
 
 router.get('/paths', getLearningPaths);
 router.get('/modules/:id', getLearningModuleDetails);
