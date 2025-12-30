@@ -11,18 +11,20 @@ const {
   deleteSession,
   getBootstrapData
 } = require('../controllers/agentCopilotController');
+const { requestCache, clearCacheOnMutation } = require('../services/requestCache');
 
 const router = express.Router();
 
 // Apply auth and role templates for Agent-Only access
 router.use(protect);
 router.use(restrictTo('agent'));
+router.use(clearCacheOnMutation);
 
-router.get('/bootstrap', getBootstrapData);
-router.get('/summary', getDailySummary);
+router.get('/bootstrap', requestCache(), getBootstrapData);
+router.get('/summary', requestCache(), getDailySummary);
 router.post('/chat', sendChatPrompt);
-router.get('/recommendations', getSmartPlanner);
-router.get('/history', getSessionsHistory);
+router.get('/recommendations', requestCache(), getSmartPlanner);
+router.get('/history', requestCache(), getSessionsHistory);
 router.get('/followup/:recordId', generateFollowup);
 
 router.patch('/session/:sessionId/title', renameSession);
