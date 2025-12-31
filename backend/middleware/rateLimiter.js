@@ -2,8 +2,8 @@ const rateLimit = require('express-rate-limit');
 
 // General rate limiting
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 10000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes default
+  max: 500000, // globally high limit
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -17,7 +17,7 @@ const generalLimiter = rateLimit({
 // Strict rate limiting for authentication routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 10000, // globally high limit
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again in 15 minutes.',
@@ -32,7 +32,7 @@ const authLimiter = rateLimit({
 // File upload rate limiting
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 3, // limit each IP to 3 file uploads per minute
+  max: 1000, // globally high limit
   message: {
     success: false,
     message: 'Too many file uploads, please wait before uploading again.',
@@ -46,7 +46,7 @@ const uploadLimiter = rateLimit({
 // API rate limiting for data-heavy operations
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 API requests per minute
+  max: 500000, // globally high limit
   message: {
     success: false,
     message: 'API rate limit exceeded, please slow down your requests.',
