@@ -68,7 +68,7 @@ exports.getSuccessionCandidates = async (req, res) => {
     const candidatesWithRecommendations = candidates.map(c => {
       const recommendations = successionEngine.generateDevelopmentRecommendations(c);
       return {
-        ...c.toObject(),
+        ...(c.toObject ? c.toObject() : c),
         developmentRecommendations: recommendations
       };
     });
