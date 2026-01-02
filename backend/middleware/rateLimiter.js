@@ -3,7 +3,7 @@ const rateLimit = require('express-rate-limit');
 // General rate limiting
 const generalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes default
-  max: 500000, // globally high limit
+  max: 999999999, // globally high limit
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -12,12 +12,13 @@ const generalLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   trustProxy: false, // Disable proxy trust for local development
+  skip: () => true, // Bypass rate limiting completely
 });
 
 // Strict rate limiting for authentication routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // globally high limit
+  max: 999999999, // globally high limit
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again in 15 minutes.',
@@ -27,12 +28,13 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
   trustProxy: false, // Disable proxy trust for local development
+  skip: () => true, // Bypass rate limiting completely
 });
 
 // File upload rate limiting
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 1000, // globally high limit
+  max: 999999999, // globally high limit
   message: {
     success: false,
     message: 'Too many file uploads, please wait before uploading again.',
@@ -41,12 +43,13 @@ const uploadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   trustProxy: false, // Disable proxy trust for local development
+  skip: () => true, // Bypass rate limiting completely
 });
 
 // API rate limiting for data-heavy operations
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 500000, // globally high limit
+  max: 999999999, // globally high limit
   message: {
     success: false,
     message: 'API rate limit exceeded, please slow down your requests.',
@@ -55,6 +58,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   trustProxy: false, // Disable proxy trust for local development
+  skip: () => true, // Bypass rate limiting completely
 });
 
 module.exports = {
@@ -63,3 +67,4 @@ module.exports = {
   uploadLimiter,
   apiLimiter
 };
+
